@@ -7,27 +7,31 @@ import (
 	"strconv"
 )
 
-type Operator func(string, string) bool
+type Value string
+type Tuple map[string]Value
 
-func atoi(s string) int {
-	i, err := strconv.Atoi(s)
+func vtoi(s Value) int {
+	i, err := strconv.Atoi(string(s))
 	if err != nil {
 		return 0
 	}
 	return i
 }
-func greaterThan(a, b string) bool {
-	return atoi(a) > atoi(b)
+
+type Operator func(Value, Value) bool
+
+func greaterThan(a, b Value) bool {
+	return vtoi(a) > vtoi(b)
 }
-func lessThan(a, b string) bool {
-	return atoi(a) < atoi(b)
+func lessThan(a, b Value) bool {
+	return vtoi(a) < vtoi(b)
 }
-func equal(a, b string) bool {
-	return atoi(a) == atoi(b)
+func equal(a, b Value) bool {
+	return vtoi(a) == vtoi(b)
 }
 
 type Stream interface {
-	Next() map[string]string
+	Next() Tuple
 	HasNext() bool
 	Close()
 }
@@ -35,7 +39,18 @@ type Stream interface {
 type CSVRelationalStream struct {
 	index  int
 	header []string
-	data   [][]string
+	data   [][]Value
+}
+
+func recordToData(records [][]string) [][]Value {
+	result := make([][]Value, len(records))
+	for i, row := range records {
+		result[i] = make([]Value, len(row))
+		for j, v := range row {
+			result[i][j] = Value(v)
+		}
+	}
+	return result
 }
 
 func NewCSVRelationalStream(r io.Reader) *CSVRelationalStream {
@@ -47,12 +62,12 @@ func NewCSVRelationalStream(r io.Reader) *CSVRelationalStream {
 	return &CSVRelationalStream{
 		index:  0,
 		header: rows[0],
-		data:   rows,
+		data:   recordToData(rows),
 	}
 }
 
-func (s *CSVRelationalStream) Next() map[string]string {
-	tuple := map[string]string{}
+func (s *CSVRelationalStream) Next() Tuple {
+	tuple := Tuple{}
 	s.index++
 	for i, key := range s.header {
 		tuple[key] = s.data[s.index][i]
@@ -71,14 +86,14 @@ type SelectionStream struct {
 	input     Stream
 	attribute string
 	selector  Operator
-	arg       string
+	arg       Value
 }
 
 func NewSelectionStream(input Stream, attribute string, selector Operator, arg string) *SelectionStream {
-	return &SelectionStream{input, attribute, selector, arg}
+	return &SelectionStream{input, attribute, selector, Value(arg)}
 }
 
-func (s *SelectionStream) Next() map[string]string {
+func (s *SelectionStream) Next() Tuple {
 	tuple := s.input.Next()
 	if s.selector(tuple[s.attribute], s.arg) {
 		return tuple
@@ -105,9 +120,9 @@ func NewProjectionStream(input Stream, attributes []string) *ProjectionStream {
 	return &ProjectionStream{input, attributes}
 }
 
-func (s *ProjectionStream) Next() map[string]string {
+func (s *ProjectionStream) Next() Tuple {
 	tuple := s.input.Next()
-	result := map[string]string{}
+	result := Tuple{}
 	for _, attribute := range s.attributes {
 		result[attribute] = tuple[attribute]
 	}
