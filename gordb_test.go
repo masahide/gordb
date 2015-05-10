@@ -24,7 +24,7 @@ func TestSelectionStream(t *testing.T) {
 	defer staff.Close()
 	fmt.Println("SELECT * FROM Staff WHERE age > 20")
 	relation1 := NewCSVRelationalStream(staff)
-	relation2 := NewSelectionStream(relation1, "age", greaterThan, "20")
+	relation2 := &SelectionStream{relation1, "age", GreaterThan, "20"}
 	printData(relation2)
 }
 
@@ -33,7 +33,7 @@ func TestProjectionStream(t *testing.T) {
 	defer staff.Close()
 	fmt.Println("SELECT age,job FROM Staff")
 	relation1 := NewCSVRelationalStream(staff)
-	relation2 := NewProjectionStream(relation1, []string{"age", "job"})
+	relation2 := &ProjectionStream{relation1, []string{"age", "job"}}
 	printData(relation2)
 }
 
@@ -45,7 +45,7 @@ func TestJoinStream(t *testing.T) {
 	fmt.Println("SELECT * FROM Staff, Rank WHERE staff.name = rank.name")
 	relation1 := NewCSVRelationalStream(staff)
 	relation2 := NewCSVRelationalStream(rank)
-	relation3 := NewJoinStream(relation1, "name", relation2, "name", equal)
+	relation3 := &JoinStream{Input1: relation1, Attr1: "name", Input2: relation2, Attr2: "name", Selector: Equal}
 	printData(relation3)
 }
 

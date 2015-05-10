@@ -20,13 +20,13 @@ func vtoi(s Value) int {
 
 type Operator func(Value, Value) bool
 
-func greaterThan(a, b Value) bool {
+func GreaterThan(a, b Value) bool {
 	return vtoi(a) > vtoi(b)
 }
-func lessThan(a, b Value) bool {
+func LessThan(a, b Value) bool {
 	return vtoi(a) < vtoi(b)
 }
-func equal(a, b Value) bool {
+func Equal(a, b Value) bool {
 	return vtoi(a) == vtoi(b)
 }
 
@@ -83,71 +83,62 @@ func (s *CSVRelationalStream) Close() {
 
 // Selection
 type SelectionStream struct {
-	input     Stream
-	attribute string
-	selector  Operator
-	arg       Value
+	Input    Stream
+	Attr     string
+	Selector Operator
+	Arg      Value
 }
 
-func NewSelectionStream(input Stream, attribute string, selector Operator, arg string) *SelectionStream {
-	return &SelectionStream{input, attribute, selector, Value(arg)}
-}
 func (s *SelectionStream) Next() Tuple {
-	tuple := s.input.Next()
-	if s.selector(tuple[s.attribute], s.arg) {
+	tuple := s.Input.Next()
+	if s.Selector(tuple[s.Attr], s.Arg) {
 		return tuple
 	}
-	if s.input.HasNext() {
+	if s.Input.HasNext() {
 		return s.Next()
 	}
 	return nil
 }
 func (s *SelectionStream) HasNext() bool {
-	return s.input.HasNext()
+	return s.Input.HasNext()
 }
 func (s *SelectionStream) Close() {
-	s.input.Close()
+	s.Input.Close()
 }
 
 // Projection
 type ProjectionStream struct {
-	input      Stream
-	attributes []string
+	Input      Stream
+	Attributes []string
 }
 
-func NewProjectionStream(input Stream, attributes []string) *ProjectionStream {
-	return &ProjectionStream{input, attributes}
-}
 func (s *ProjectionStream) Next() Tuple {
-	tuple := s.input.Next()
+	tuple := s.Input.Next()
 	result := Tuple{}
-	for _, attribute := range s.attributes {
-		result[attribute] = tuple[attribute]
+	for _, Attr := range s.Attributes {
+		result[Attr] = tuple[Attr]
 	}
 	return result
 }
 func (s *ProjectionStream) HasNext() bool {
-	return s.input.HasNext()
+	return s.Input.HasNext()
 }
 func (s *ProjectionStream) Close() {
-	s.input.Close()
+	s.Input.Close()
 }
 
 // Rename
 type RenameStream struct {
-	input     Stream
-	attribute string
-	name      string
+	Input Stream
+	Attr  string
+	name  string
 }
 
-func NewRenameStream(input Stream, attribute, name string) *RenameStream {
-	return &RenameStream{input, attribute, name}
-}
 func (s *RenameStream) Next() Tuple {
 	result := Tuple{}
-	tuple := s.input.Next()
+	tuple := s.Input.Next()
 	for key := range tuple {
-		if key == s.attribute {
+		if key == s.Attr {
 			result[s.name] = tuple[key]
 			continue
 		}
@@ -157,70 +148,60 @@ func (s *RenameStream) Next() Tuple {
 
 }
 func (s *RenameStream) HasNext() bool {
-	return s.input.HasNext()
+	return s.Input.HasNext()
 }
 func (s *RenameStream) Close() {
-	s.input.Close()
+	s.Input.Close()
 }
 
 // Union
 type UnionStream struct {
-	input1 Stream
-	input2 Stream
+	Input1 Stream
+	Input2 Stream
 }
 
-func NewUnionStream(input1, input2 Stream) *UnionStream {
-	return &UnionStream{input1, input2}
-}
 func (s *UnionStream) Next() Tuple {
-	if s.input1.HasNext() {
-		return s.input1.Next()
-	} else if s.input2.HasNext() {
-		return s.input2.Next()
+	if s.Input1.HasNext() {
+		return s.Input1.Next()
+	} else if s.Input2.HasNext() {
+		return s.Input2.Next()
 	}
 	return nil
 }
 func (s *UnionStream) HasNext() bool {
-	if s.input1.HasNext() {
+	if s.Input1.HasNext() {
 		return true
-	} else if s.input2.HasNext() {
+	} else if s.Input2.HasNext() {
 		return true
 	}
 	return false
 }
 func (s *UnionStream) Close() {
-	s.input1.Close()
-	s.input2.Close()
+	s.Input1.Close()
+	s.Input2.Close()
 }
 
 // Join
 type JoinStream struct {
-	input1, input2         Stream
-	attribute1, attribute2 string
-	selector               Operator
+	Input1   Stream
+	Attr1    string
+	Input2   Stream
+	Attr2    string
+	Selector Operator
 
 	index        int
 	tuples       []Tuple
 	currentTuple Tuple
 }
 
-func NewJoinStream(input1 Stream, attribute1 string, input2 Stream, attribute2 string, selector Operator) *JoinStream {
-	return &JoinStream{
-		input1:     input1,
-		input2:     input2,
-		attribute1: attribute1,
-		attribute2: attribute2,
-		selector:   selector,
-	}
-}
 func (s *JoinStream) Next() Tuple {
 	if len(s.tuples) <= s.index {
 		s.index = 0
 		s.currentTuple = nil
 	}
 	if s.currentTuple == nil {
-		if s.input1.HasNext() {
-			s.currentTuple = s.input1.Next()
+		if s.Input1.HasNext() {
+			s.currentTuple = s.Input1.Next()
 		}
 		if s.currentTuple == nil {
 			return nil
@@ -228,7 +209,7 @@ func (s *JoinStream) Next() Tuple {
 	}
 	targetTuple := s.tuples[s.index]
 	s.index++
-	if s.selector(s.currentTuple[s.attribute1], targetTuple[s.attribute2]) {
+	if s.Selector(s.currentTuple[s.Attr1], targetTuple[s.Attr2]) {
 		result := Tuple{}
 		for key := range s.currentTuple {
 			result[key] = s.currentTuple[key]
@@ -247,16 +228,16 @@ func (s *JoinStream) Next() Tuple {
 func (s *JoinStream) HasNext() bool {
 	if s.tuples == nil {
 		s.tuples = []Tuple{}
-		for s.input2.HasNext() {
-			s.tuples = append(s.tuples, s.input2.Next())
+		for s.Input2.HasNext() {
+			s.tuples = append(s.tuples, s.Input2.Next())
 		}
 	}
 	if len(s.tuples) > s.index {
 		return true
 	}
-	return s.input1.HasNext()
+	return s.Input1.HasNext()
 }
 func (s *JoinStream) Close() {
-	s.input1.Close()
-	s.input2.Close()
+	s.Input1.Close()
+	s.Input2.Close()
 }
