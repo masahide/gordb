@@ -49,6 +49,18 @@ func TestJoinStream(t *testing.T) {
 	printData(relation3)
 }
 
+func TestCrossJoinStream(t *testing.T) {
+	staff := fopen("staff.csv")
+	defer staff.Close()
+	rank := fopen("rank.csv")
+	defer rank.Close()
+	fmt.Println("SELECT * FROM Staff CROSS JOIN Rank")
+	relation1 := NewCSVRelationalStream(staff)
+	relation2 := NewCSVRelationalStream(rank)
+	relation3 := &CrossJoinStream{Input1: relation1, Input2: &RenameStream{relation2, "name", "name2"}}
+	printData(relation3)
+}
+
 func printData(s Stream) {
 	var cols []string
 	isHeaderWritten := false

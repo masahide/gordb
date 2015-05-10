@@ -108,14 +108,14 @@ func (s *SelectionStream) Close() {
 
 // Projection
 type ProjectionStream struct {
-	Input      Stream
-	Attributes []string
+	Input Stream
+	Attrs []string
 }
 
 func (s *ProjectionStream) Next() Tuple {
 	tuple := s.Input.Next()
 	result := Tuple{}
-	for _, Attr := range s.Attributes {
+	for _, Attr := range s.Attrs {
 		result[Attr] = tuple[Attr]
 	}
 	return result
@@ -131,7 +131,7 @@ func (s *ProjectionStream) Close() {
 type RenameStream struct {
 	Input Stream
 	Attr  string
-	name  string
+	Name  string
 }
 
 func (s *RenameStream) Next() Tuple {
@@ -139,7 +139,7 @@ func (s *RenameStream) Next() Tuple {
 	tuple := s.Input.Next()
 	for key := range tuple {
 		if key == s.Attr {
-			result[s.name] = tuple[key]
+			result[s.Name] = tuple[key]
 			continue
 		}
 		result[key] = tuple[key]
@@ -183,11 +183,9 @@ func (s *UnionStream) Close() {
 
 // Join
 type JoinStream struct {
-	Input1   Stream
-	Attr1    string
-	Input2   Stream
-	Attr2    string
-	Selector Operator
+	Input1, Input2 Stream
+	Attr1, Attr2   string
+	Selector       Operator
 
 	index        int
 	tuples       []Tuple
@@ -238,6 +236,56 @@ func (s *JoinStream) HasNext() bool {
 	return s.Input1.HasNext()
 }
 func (s *JoinStream) Close() {
+	s.Input1.Close()
+	s.Input2.Close()
+}
+
+// CrossJoin
+type CrossJoinStream struct {
+	Input1, Input2 Stream
+
+	index        int
+	tuples       []Tuple
+	currentTuple Tuple
+}
+
+func (s *CrossJoinStream) Next() Tuple {
+	if len(s.tuples) <= s.index {
+		s.index = 0
+		s.currentTuple = nil
+	}
+	if s.currentTuple == nil {
+		if s.Input1.HasNext() {
+			s.currentTuple = s.Input1.Next()
+		}
+		if s.currentTuple == nil {
+			return nil
+		}
+	}
+	targetTuple := s.tuples[s.index]
+	s.index++
+	result := Tuple{}
+	for key := range s.currentTuple {
+		result[key] = s.currentTuple[key]
+	}
+	for key := range targetTuple {
+		result[key] = targetTuple[key]
+	}
+	return result
+}
+func (s *CrossJoinStream) HasNext() bool {
+	if s.tuples == nil {
+		s.tuples = []Tuple{}
+		for s.Input2.HasNext() {
+			s.tuples = append(s.tuples, s.Input2.Next())
+		}
+	}
+	if len(s.tuples) > s.index {
+		return true
+	}
+	return s.Input1.HasNext()
+}
+func (s *CrossJoinStream) Close() {
 	s.Input1.Close()
 	s.Input2.Close()
 }
