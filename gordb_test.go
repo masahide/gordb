@@ -37,6 +37,18 @@ func TestProjectionStream(t *testing.T) {
 	printData(relation2)
 }
 
+func TestJoinStream(t *testing.T) {
+	staff := fopen("staff.csv")
+	defer staff.Close()
+	rank := fopen("rank.csv")
+	defer rank.Close()
+	fmt.Println("SELECT * FROM Staff, Rank WHERE staff.name = rank.name")
+	relation1 := NewCSVRelationalStream(staff)
+	relation2 := NewCSVRelationalStream(rank)
+	relation3 := NewJoinStream(relation1, "name", relation2, "name", equal)
+	printData(relation3)
+}
+
 func printData(s Stream) {
 	var cols []string
 	isHeaderWritten := false
