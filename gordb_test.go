@@ -11,12 +11,12 @@ func TestCSVRelationalStream(t *testing.T) {
 	defer staff.Close()
 	original := NewCSVRelationalStream(staff)
 	fmt.Println("SELECT * FROM Staff")
-	printData(original)
+	StreamToString(original)
 	rank := fopen("rank.csv")
 	defer rank.Close()
 	original = NewCSVRelationalStream(rank)
 	fmt.Println("SELECT * FROM Rank")
-	printData(original)
+	StreamToString(original)
 }
 
 func TestSelectionStream(t *testing.T) {
@@ -25,7 +25,7 @@ func TestSelectionStream(t *testing.T) {
 	fmt.Println("SELECT * FROM Staff WHERE age > 20")
 	relation1 := NewCSVRelationalStream(staff)
 	relation2 := &SelectionStream{relation1, "age", GreaterThan, "20"}
-	printData(relation2)
+	StreamToString(relation2)
 }
 
 func TestProjectionStream(t *testing.T) {
@@ -34,7 +34,7 @@ func TestProjectionStream(t *testing.T) {
 	fmt.Println("SELECT age,job FROM Staff")
 	relation1 := NewCSVRelationalStream(staff)
 	relation2 := &ProjectionStream{relation1, []string{"age", "job"}}
-	printData(relation2)
+	StreamToString(relation2)
 }
 
 func TestJoinStream(t *testing.T) {
@@ -46,7 +46,7 @@ func TestJoinStream(t *testing.T) {
 	relation1 := NewCSVRelationalStream(staff)
 	relation2 := NewCSVRelationalStream(rank)
 	relation3 := &JoinStream{Input1: relation1, Attr1: "name", Input2: relation2, Attr2: "name", Selector: Equal}
-	printData(relation3)
+	StreamToString(relation3)
 }
 
 func TestCrossJoinStream(t *testing.T) {
@@ -58,33 +58,7 @@ func TestCrossJoinStream(t *testing.T) {
 	relation1 := NewCSVRelationalStream(staff)
 	relation2 := NewCSVRelationalStream(rank)
 	relation3 := &CrossJoinStream{Input1: relation1, Input2: &RenameStream{relation2, "name", "name2"}}
-	printData(relation3)
-}
-
-func printData(s Stream) {
-	var cols []string
-	isHeaderWritten := false
-	for s.HasNext() {
-		row := s.Next()
-		if !isHeaderWritten {
-			cols = make([]string, 0, len(row))
-			for col, _ := range row {
-				cols = append(cols, col)
-			}
-			fmt.Printf("|")
-			for _, col := range cols {
-				fmt.Printf("%14s|", col)
-			}
-			fmt.Printf("\n")
-			isHeaderWritten = true
-		}
-		fmt.Printf("|")
-		for _, col := range cols {
-			fmt.Printf("%14s|", row[col])
-		}
-		fmt.Printf("\n")
-	}
-	s.Close()
+	StreamToString(relation3)
 }
 
 func fopen(fn string) *os.File {

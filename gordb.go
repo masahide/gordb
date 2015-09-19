@@ -3,35 +3,82 @@ package gordb
 
 import (
 	"encoding/csv"
+	"fmt"
 	"io"
 	"strconv"
 )
 
-type Value string
-type Tuple map[string]Value
+type Value interface{}
 
-func vtoi(s Value) int {
-	i, err := strconv.Atoi(string(s))
-	if err != nil {
-		return 0
+type Tuple struct {
+	Index []string
+	Data  map[string]Value
+}
+
+func NewTuple() *Tuple {
+	return &Tuple{[]string{}, map[string]Value{}}
+}
+func (t *Tuple) Set(key string, value Value) {
+	if _, ok := t.Data[key]; !ok {
+		t.Index = append(t.Index, key)
 	}
-	return i
+	t.Data[key] = value
+}
+func (t *Tuple) Get(key string) Value {
+	v, _ := t.Data[key]
+	return v
+}
+
+func (t *Tuple) Len() int {
+	return len(t.Data)
+}
+
+func (t *Tuple) Iterator(cb func(i int, key string, value Value) error) error {
+	for i, key := range t.Index {
+		if err := cb(i, key, t.Data[key]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func vtof(s Value) (f float64) {
+	switch t := s.(type) {
+	case int:
+		f = float64(t)
+	case float64:
+		f = t
+	case float32:
+		f = float64(t)
+	case string:
+		i, err := strconv.Atoi(t)
+		if err != nil {
+			i = 0
+		}
+		f = float64(i)
+	case bool:
+		if t {
+			f = float64(1)
+		}
+	default:
+	}
+	return f
 }
 
 type Operator func(Value, Value) bool
 
 func GreaterThan(a, b Value) bool {
-	return vtoi(a) > vtoi(b)
+	return vtof(a) > vtof(b)
 }
 func LessThan(a, b Value) bool {
-	return vtoi(a) < vtoi(b)
+	return vtof(a) < vtof(b)
 }
 func Equal(a, b Value) bool {
-	return vtoi(a) == vtoi(b)
+	return vtof(a) == vtof(b)
 }
 
 type Stream interface {
-	Next() Tuple
+	Next() *Tuple
 	HasNext() bool
 	Close()
 }
@@ -66,11 +113,11 @@ func NewCSVRelationalStream(r io.Reader) *CSVRelationalStream {
 		data:   recordToData(rows),
 	}
 }
-func (s *CSVRelationalStream) Next() Tuple {
-	tuple := Tuple{}
+func (s *CSVRelationalStream) Next() *Tuple {
+	tuple := NewTuple()
 	s.index++
 	for i, key := range s.header {
-		tuple[key] = s.data[s.index][i]
+		tuple.Data[key] = s.data[s.index][i]
 	}
 	return tuple
 }
@@ -89,9 +136,9 @@ type SelectionStream struct {
 	Arg      Value
 }
 
-func (s *SelectionStream) Next() Tuple {
+func (s *SelectionStream) Next() *Tuple {
 	tuple := s.Input.Next()
-	if s.Selector(tuple[s.Attr], s.Arg) {
+	if s.Selector(tuple.Get(s.Attr), s.Arg) {
 		return tuple
 	}
 	if s.Input.HasNext() {
@@ -112,11 +159,11 @@ type ProjectionStream struct {
 	Attrs []string
 }
 
-func (s *ProjectionStream) Next() Tuple {
+func (s *ProjectionStream) Next() *Tuple {
 	tuple := s.Input.Next()
-	result := Tuple{}
+	result := NewTuple()
 	for _, Attr := range s.Attrs {
-		result[Attr] = tuple[Attr]
+		result.Set(Attr, tuple.Get(Attr))
 	}
 	return result
 }
@@ -134,16 +181,17 @@ type RenameStream struct {
 	Name  string
 }
 
-func (s *RenameStream) Next() Tuple {
-	result := Tuple{}
+func (s *RenameStream) Next() *Tuple {
+	result := NewTuple()
 	tuple := s.Input.Next()
-	for key := range tuple {
+	tuple.Iterator(func(i int, key string, value Value) error {
 		if key == s.Attr {
-			result[s.Name] = tuple[key]
-			continue
+			result.Set(s.Name, value)
+			return nil
 		}
-		result[key] = tuple[key]
-	}
+		result.Set(key, value)
+		return nil
+	})
 	return result
 
 }
@@ -160,7 +208,7 @@ type UnionStream struct {
 	Input2 Stream
 }
 
-func (s *UnionStream) Next() Tuple {
+func (s *UnionStream) Next() *Tuple {
 	if s.Input1.HasNext() {
 		return s.Input1.Next()
 	} else if s.Input2.HasNext() {
@@ -188,11 +236,11 @@ type JoinStream struct {
 	Selector       Operator
 
 	index        int
-	tuples       []Tuple
-	currentTuple Tuple
+	tuples       []*Tuple
+	currentTuple *Tuple
 }
 
-func (s *JoinStream) Next() Tuple {
+func (s *JoinStream) Next() *Tuple {
 	if len(s.tuples) <= s.index {
 		s.index = 0
 		s.currentTuple = nil
@@ -207,14 +255,16 @@ func (s *JoinStream) Next() Tuple {
 	}
 	targetTuple := s.tuples[s.index]
 	s.index++
-	if s.Selector(s.currentTuple[s.Attr1], targetTuple[s.Attr2]) {
-		result := Tuple{}
-		for key := range s.currentTuple {
-			result[key] = s.currentTuple[key]
-		}
-		for key := range targetTuple {
-			result[key] = targetTuple[key]
-		}
+	if s.Selector(s.currentTuple.Get(s.Attr1), targetTuple.Get(s.Attr2)) {
+		result := NewTuple()
+		s.currentTuple.Iterator(func(i int, key string, value Value) error {
+			result.Set(key, value)
+			return nil
+		})
+		targetTuple.Iterator(func(i int, key string, value Value) error {
+			result.Set(key, value)
+			return nil
+		})
 		return result
 	}
 	if s.HasNext() {
@@ -225,7 +275,7 @@ func (s *JoinStream) Next() Tuple {
 }
 func (s *JoinStream) HasNext() bool {
 	if s.tuples == nil {
-		s.tuples = []Tuple{}
+		s.tuples = []*Tuple{}
 		for s.Input2.HasNext() {
 			s.tuples = append(s.tuples, s.Input2.Next())
 		}
@@ -245,11 +295,11 @@ type CrossJoinStream struct {
 	Input1, Input2 Stream
 
 	index        int
-	tuples       []Tuple
-	currentTuple Tuple
+	tuples       []*Tuple
+	currentTuple *Tuple
 }
 
-func (s *CrossJoinStream) Next() Tuple {
+func (s *CrossJoinStream) Next() *Tuple {
 	if len(s.tuples) <= s.index {
 		s.index = 0
 		s.currentTuple = nil
@@ -264,18 +314,20 @@ func (s *CrossJoinStream) Next() Tuple {
 	}
 	targetTuple := s.tuples[s.index]
 	s.index++
-	result := Tuple{}
-	for key := range s.currentTuple {
-		result[key] = s.currentTuple[key]
-	}
-	for key := range targetTuple {
-		result[key] = targetTuple[key]
-	}
+	result := NewTuple()
+	s.currentTuple.Iterator(func(i int, key string, value Value) error {
+		result.Set(key, value)
+		return nil
+	})
+	targetTuple.Iterator(func(i int, key string, value Value) error {
+		result.Set(key, value)
+		return nil
+	})
 	return result
 }
 func (s *CrossJoinStream) HasNext() bool {
 	if s.tuples == nil {
-		s.tuples = []Tuple{}
+		s.tuples = []*Tuple{}
 		for s.Input2.HasNext() {
 			s.tuples = append(s.tuples, s.Input2.Next())
 		}
@@ -288,4 +340,27 @@ func (s *CrossJoinStream) HasNext() bool {
 func (s *CrossJoinStream) Close() {
 	s.Input1.Close()
 	s.Input2.Close()
+}
+
+func StreamToString(s Stream) string {
+	out := ""
+	isHeaderWritten := false
+	for s.HasNext() {
+		row := s.Next()
+		if !isHeaderWritten {
+			out += fmt.Sprintf("|")
+			for _, col := range row.Index {
+				out += fmt.Sprintf("%14s|", col)
+			}
+			out += fmt.Sprintf("\n")
+			isHeaderWritten = true
+		}
+		out += fmt.Sprintf("|")
+		for _, col := range row.Index {
+			out += fmt.Sprintf("%14s|", row.Get(col))
+		}
+		out += fmt.Sprintf("\n")
+	}
+	s.Close()
+	return out
 }
