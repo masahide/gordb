@@ -11,31 +11,35 @@ import (
 type Value interface{}
 
 type Tuple struct {
-	Index []string
-	Data  map[string]Value
+	index []string
+	data  map[string]Value
 }
 
 func NewTuple() *Tuple {
-	return &Tuple{Index: make([]string, 0, 100), Data: map[string]Value{}}
+	return &Tuple{index: make([]string, 0, 100), data: map[string]Value{}}
 }
 func (t *Tuple) Set(key string, value Value) {
-	if _, ok := t.Data[key]; !ok {
-		t.Index = append(t.Index, key)
+	if _, ok := t.data[key]; !ok {
+		t.index = append(t.index, key)
 	}
-	t.Data[key] = value
+	t.data[key] = value
 }
 func (t *Tuple) Get(key string) Value {
-	v, _ := t.Data[key]
+	v, _ := t.data[key]
 	return v
 }
 
 func (t *Tuple) Len() int {
-	return len(t.Data)
+	return len(t.data)
+}
+
+func (t *Tuple) Index() []string {
+	return t.index
 }
 
 func (t *Tuple) Iterator(cb func(i int, key string, value Value) error) error {
-	for i, key := range t.Index {
-		if err := cb(i, key, t.Data[key]); err != nil {
+	for i, key := range t.Index() {
+		if err := cb(i, key, t.data[key]); err != nil {
 			return err
 		}
 	}
@@ -349,14 +353,14 @@ func StreamToString(s Stream) string {
 		row := s.Next()
 		if !isHeaderWritten {
 			out += fmt.Sprintf("|")
-			for _, col := range row.Index {
+			for _, col := range row.Index() {
 				out += fmt.Sprintf("%14s|", col)
 			}
 			out += fmt.Sprintf("\n")
 			isHeaderWritten = true
 		}
 		out += fmt.Sprintf("|")
-		for _, col := range row.Index {
+		for _, col := range row.Index() {
 			out += fmt.Sprintf("%14s|", row.Get(col))
 		}
 		out += fmt.Sprintf("\n")
