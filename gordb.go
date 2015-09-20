@@ -16,7 +16,7 @@ type Tuple struct {
 }
 
 func NewTuple() *Tuple {
-	return &Tuple{[]string{}, map[string]Value{}}
+	return &Tuple{Index: make([]string, 0, 100), Data: map[string]Value{}}
 }
 func (t *Tuple) Set(key string, value Value) {
 	if _, ok := t.Data[key]; !ok {
@@ -117,7 +117,7 @@ func (s *CSVRelationalStream) Next() *Tuple {
 	tuple := NewTuple()
 	s.index++
 	for i, key := range s.header {
-		tuple.Data[key] = s.data[s.index][i]
+		tuple.Set(key, s.data[s.index][i])
 	}
 	return tuple
 }
