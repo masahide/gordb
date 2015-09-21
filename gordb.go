@@ -5,81 +5,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"strconv"
 )
-
-type Value interface{}
-
-type Tuple struct {
-	index []string
-	data  map[string]Value
-}
-
-func NewTuple() *Tuple {
-	return &Tuple{index: make([]string, 0, 100), data: map[string]Value{}}
-}
-func (t *Tuple) Set(key string, value Value) {
-	if _, ok := t.data[key]; !ok {
-		t.index = append(t.index, key)
-	}
-	t.data[key] = value
-}
-func (t *Tuple) Get(key string) Value {
-	v, _ := t.data[key]
-	return v
-}
-
-func (t *Tuple) Len() int {
-	return len(t.data)
-}
-
-func (t *Tuple) Index() []string {
-	return t.index
-}
-
-func (t *Tuple) Iterator(cb func(i int, key string, value Value) error) error {
-	for i, key := range t.Index() {
-		if err := cb(i, key, t.data[key]); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func vtof(s Value) (f float64) {
-	switch t := s.(type) {
-	case int:
-		f = float64(t)
-	case float64:
-		f = t
-	case float32:
-		f = float64(t)
-	case string:
-		i, err := strconv.Atoi(t)
-		if err != nil {
-			i = 0
-		}
-		f = float64(i)
-	case bool:
-		if t {
-			f = float64(1)
-		}
-	default:
-	}
-	return f
-}
-
-type Operator func(Value, Value) bool
-
-func GreaterThan(a, b Value) bool {
-	return vtof(a) > vtof(b)
-}
-func LessThan(a, b Value) bool {
-	return vtof(a) < vtof(b)
-}
-func Equal(a, b Value) bool {
-	return vtof(a) == vtof(b)
-}
 
 type Stream interface {
 	Next() *Tuple
@@ -87,10 +13,14 @@ type Stream interface {
 	Close()
 }
 
+type Relation struct {
+	Field []string
+	Data  [][]Value
+}
+
 type CSVRelationalStream struct {
-	index  int
-	header []string
-	data   [][]Value
+	index int
+	Relation
 }
 
 func recordToData(records [][]string) [][]Value {
@@ -112,24 +42,26 @@ func NewCSVRelationalStream(r io.Reader) *CSVRelationalStream {
 		panic(err)
 	}
 	return &CSVRelationalStream{
-		index:  0,
-		header: rows[0],
-		data:   recordToData(rows),
+		index: 0,
+		Relation: Relation{
+			Field: rows[0],
+			Data:  recordToData(rows),
+		},
 	}
 }
 func (s *CSVRelationalStream) Next() *Tuple {
 	tuple := NewTuple()
 	s.index++
-	for i, key := range s.header {
-		tuple.Set(key, s.data[s.index][i])
+	for i, key := range s.Field {
+		tuple.Set(key, s.Data[s.index][i])
 	}
 	return tuple
 }
 func (s *CSVRelationalStream) HasNext() bool {
-	return (s.index + 1) < len(s.data)
+	return (s.index + 1) < len(s.Data)
 }
 func (s *CSVRelationalStream) Close() {
-	s.data = nil
+	s.Data = nil
 }
 
 // Selection
@@ -279,7 +211,7 @@ func (s *JoinStream) Next() *Tuple {
 }
 func (s *JoinStream) HasNext() bool {
 	if s.tuples == nil {
-		s.tuples = []*Tuple{}
+		s.tuples = make([]*Tuple, 0, 100)
 		for s.Input2.HasNext() {
 			s.tuples = append(s.tuples, s.Input2.Next())
 		}
@@ -331,7 +263,7 @@ func (s *CrossJoinStream) Next() *Tuple {
 }
 func (s *CrossJoinStream) HasNext() bool {
 	if s.tuples == nil {
-		s.tuples = []*Tuple{}
+		s.tuples = make([]*Tuple, 0, 100)
 		for s.Input2.HasNext() {
 			s.tuples = append(s.tuples, s.Input2.Next())
 		}
@@ -353,18 +285,42 @@ func StreamToString(s Stream) string {
 		row := s.Next()
 		if !isHeaderWritten {
 			out += fmt.Sprintf("|")
-			for _, col := range row.Index() {
+			for _, col := range row.Headers() {
 				out += fmt.Sprintf("%14s|", col)
 			}
 			out += fmt.Sprintf("\n")
 			isHeaderWritten = true
 		}
 		out += fmt.Sprintf("|")
-		for _, col := range row.Index() {
+		for _, col := range row.Headers() {
 			out += fmt.Sprintf("%14s|", row.Get(col))
 		}
 		out += fmt.Sprintf("\n")
 	}
 	s.Close()
 	return out
+}
+
+func StreamToRelation(s Stream) *Relation {
+	a := &Relation{
+		Field: nil,
+		Data:  make([][]Value, 0, 100),
+	}
+
+	for s.HasNext() {
+		row := s.Next()
+		if a.Field == nil {
+			a.Field = make([]string, 0, 100)
+			for _, col := range row.Headers() {
+				a.Field = append(a.Field, col)
+			}
+		}
+		m := make([]Value, 0, 100)
+		for _, col := range row.Headers() {
+			m = append(m, row.Get(col))
+		}
+		a.Data = append(a.Data, m)
+	}
+	s.Close()
+	return a
 }
