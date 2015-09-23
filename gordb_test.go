@@ -13,12 +13,12 @@ func TestCSVRelationalStream(t *testing.T) {
 	defer staff.Close()
 	original := NewCSVRelationalStream(staff)
 	fmt.Println("SELECT * FROM Staff")
-	fmt.Println(StreamToString(original), "\n")
+	pp.Print(StreamToRelation(original))
 	rank := fopen("rank.csv")
 	defer rank.Close()
 	original = NewCSVRelationalStream(rank)
 	fmt.Println("SELECT * FROM Rank")
-	fmt.Println(StreamToString(original), "\n")
+	pp.Print(StreamToRelation(original))
 }
 
 func TestSelectionStream(t *testing.T) {

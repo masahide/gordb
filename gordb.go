@@ -3,9 +3,10 @@ package gordb
 
 import (
 	"encoding/csv"
-	"fmt"
 	"io"
 )
+
+const TupleCapacity = 100
 
 type Stream interface {
 	Next() *Tuple
@@ -211,7 +212,7 @@ func (s *JoinStream) Next() *Tuple {
 }
 func (s *JoinStream) HasNext() bool {
 	if s.tuples == nil {
-		s.tuples = make([]*Tuple, 0, 100)
+		s.tuples = make([]*Tuple, 0, TupleCapacity)
 		for s.Input2.HasNext() {
 			s.tuples = append(s.tuples, s.Input2.Next())
 		}
@@ -263,7 +264,7 @@ func (s *CrossJoinStream) Next() *Tuple {
 }
 func (s *CrossJoinStream) HasNext() bool {
 	if s.tuples == nil {
-		s.tuples = make([]*Tuple, 0, 100)
+		s.tuples = make([]*Tuple, 0, TupleCapacity)
 		for s.Input2.HasNext() {
 			s.tuples = append(s.tuples, s.Input2.Next())
 		}
@@ -278,49 +279,39 @@ func (s *CrossJoinStream) Close() {
 	s.Input2.Close()
 }
 
-func StreamToString(s Stream) string {
-	out := ""
-	isHeaderWritten := false
-	for s.HasNext() {
-		row := s.Next()
-		if !isHeaderWritten {
-			out += fmt.Sprintf("|")
-			for _, col := range row.Headers() {
-				out += fmt.Sprintf("%14s|", col)
-			}
-			out += fmt.Sprintf("\n")
-			isHeaderWritten = true
-		}
-		out += fmt.Sprintf("|")
-		for _, col := range row.Headers() {
-			out += fmt.Sprintf("%14s|", row.Get(col))
-		}
-		out += fmt.Sprintf("\n")
-	}
-	s.Close()
-	return out
-}
-
 func StreamToRelation(s Stream) *Relation {
 	a := &Relation{
 		Field: nil,
-		Data:  make([][]Value, 0, 100),
+		Data:  make([][]Value, 0, TupleCapacity),
 	}
 
-	for s.HasNext() {
-		row := s.Next()
-		if a.Field == nil {
-			a.Field = make([]string, 0, 100)
-			for _, col := range row.Headers() {
-				a.Field = append(a.Field, col)
-			}
+	if !s.HasNext() {
+		return a
+	}
+	row := s.Next()
+	a.Field = makeField(row.Headers())
+	for {
+		a.Data = append(a.Data, makeValues(row))
+		if !s.HasNext() {
+			break
 		}
-		m := make([]Value, 0, 100)
-		for _, col := range row.Headers() {
-			m = append(m, row.Get(col))
-		}
-		a.Data = append(a.Data, m)
+		row = s.Next()
 	}
 	s.Close()
 	return a
+}
+
+func makeField(headers []string) []string {
+	field := make([]string, 0, TupleCapacity)
+	for _, col := range headers {
+		field = append(field, col)
+	}
+	return field
+}
+func makeValues(t *Tuple) []Value {
+	m := make([]Value, 0, TupleCapacity)
+	for _, col := range t.Headers() {
+		m = append(m, t.Get(col))
+	}
+	return m
 }
