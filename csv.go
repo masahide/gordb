@@ -28,8 +28,8 @@ func NewCSVRelationalStream(r io.Reader) *Relation {
 		panic(err)
 	}
 	return &Relation{
-		Field: rows[0],
-		Data:  recordToData(rows[1:]),
+		Fields: rows[0],
+		Data:   recordToData(rows[1:]),
 	}
 }
 

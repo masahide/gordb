@@ -11,8 +11,8 @@ import (
 
 func TestCSVRelationalStream_Staff(t *testing.T) {
 	var SELECT_FROM_Staff = &Relation{
-		index: 0,
-		Field: []string{"name", "age", "job"},
+		index:  0,
+		Fields: Schema{Field{"name", 0}, Field{"age", 0}, Field{"job", 0}},
 		Data: [][]Value{
 			[]Value{"清水", "17", "エンジニア"},
 			[]Value{"田中", "34", "デザイナー"},
@@ -30,8 +30,8 @@ func TestCSVRelationalStream_Staff(t *testing.T) {
 
 func TestCSVRelationalStream_Rank(t *testing.T) {
 	var SELECT_FROM_Rank = &Relation{
-		index: 0,
-		Field: []string{"name", "rank"},
+		index:  0,
+		Fields: Schema{Field{"name", 0}, Field{"rank", 0}},
 		Data: [][]Value{
 			[]Value{"清水", "78"},
 			[]Value{"田中", "46"},
@@ -48,8 +48,8 @@ func TestCSVRelationalStream_Rank(t *testing.T) {
 
 func TestSelectionStream(t *testing.T) {
 	var SELECT_FROM_Staff_WHERE_age_20 = &Relation{
-		index: 0,
-		Field: []string{"name", "age", "job"},
+		index:  0,
+		Fields: Schema{Field{"name", 0}, Field{"age", 0}, Field{"job", 0}},
 		Data: [][]Value{
 			[]Value{"田中", "34", "デザイナー"},
 			[]Value{"佐藤", "21", "マネージャー"},
@@ -68,8 +68,8 @@ func TestSelectionStream(t *testing.T) {
 
 func TestProjectionStream(t *testing.T) {
 	var SELECT_age_job_FROM_Staff = &Relation{
-		index: 0,
-		Field: []string{"age", "job"},
+		index:  0,
+		Fields: Schema{Field{"age", 0}, Field{"job", 0}},
 		Data: [][]Value{
 			[]Value{"17", "エンジニア"},
 			[]Value{"34", "デザイナー"},
@@ -88,8 +88,8 @@ func TestProjectionStream(t *testing.T) {
 
 func TestJoinStream(t *testing.T) {
 	var SELECT_FROM_Staff_Rank_WHERE_staff_name_rank_name = &Relation{
-		index: 0,
-		Field: []string{"name", "age", "job", "rank"},
+		index:  0,
+		Fields: Schema{Field{"name", 0}, Field{"age", 0}, Field{"job", 0}, Field{"rank", 0}},
 		Data: [][]Value{
 			[]Value{"清水", "17", "エンジニア", "78"},
 			[]Value{"田中", "34", "デザイナー", "46"},
@@ -111,8 +111,8 @@ func TestJoinStream(t *testing.T) {
 
 func TestCrossJoinStream(t *testing.T) {
 	var SELECT_FROM_Staff_CROSS_JOIN_Rank = &Relation{
-		index: 0,
-		Field: []string{"name", "age", "job", "name2", "rank"},
+		index:  0,
+		Fields: Schema{Field{"name", 0}, Field{"age", 0}, Field{"job", 0}, Field{"name2", 0}, Field{"rank", 0}},
 		Data: [][]Value{
 			[]Value{"清水", "17", "エンジニア", "清水", "78"},
 			[]Value{"清水", "17", "エンジニア", "田中", "46"},
