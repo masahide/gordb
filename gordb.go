@@ -1,11 +1,6 @@
 // go-rdb
 package gordb
 
-import (
-	"encoding/csv"
-	"io"
-)
-
 const TupleCapacity = 100
 
 type Stream interface {
@@ -15,54 +10,25 @@ type Stream interface {
 }
 
 type Relation struct {
+	index int
 	Field []string
 	Data  [][]Value
 }
 
-type CSVRelationalStream struct {
-	index int
-	Relation
+func (r *Relation) HasNext() bool {
+	return r.index < len(r.Data)
+}
+func (r *Relation) Close() {
+	r.index = 0
 }
 
-func recordToData(records [][]string) [][]Value {
-	result := make([][]Value, len(records))
-	for i, row := range records {
-		result[i] = make([]Value, len(row))
-		for j, v := range row {
-			result[i][j] = Value(v)
-		}
-	}
-	return result
-}
-
-// CSVRelational
-func NewCSVRelationalStream(r io.Reader) *CSVRelationalStream {
-	reader := csv.NewReader(r)
-	rows, err := reader.ReadAll()
-	if err != nil {
-		panic(err)
-	}
-	return &CSVRelationalStream{
-		index: 0,
-		Relation: Relation{
-			Field: rows[0],
-			Data:  recordToData(rows),
-		},
-	}
-}
-func (s *CSVRelationalStream) Next() *Tuple {
+func (r *Relation) Next() *Tuple {
 	tuple := NewTuple()
-	s.index++
-	for i, key := range s.Field {
-		tuple.Set(key, s.Data[s.index][i])
+	for i, key := range r.Field {
+		tuple.Set(key, r.Data[r.index][i])
 	}
+	r.index++
 	return tuple
-}
-func (s *CSVRelationalStream) HasNext() bool {
-	return (s.index + 1) < len(s.Data)
-}
-func (s *CSVRelationalStream) Close() {
-	s.Data = nil
 }
 
 // Selection
@@ -280,25 +246,25 @@ func (s *CrossJoinStream) Close() {
 }
 
 func StreamToRelation(s Stream) *Relation {
-	a := &Relation{
+	result := &Relation{
 		Field: nil,
 		Data:  make([][]Value, 0, TupleCapacity),
 	}
 
 	if !s.HasNext() {
-		return a
+		return result
 	}
 	row := s.Next()
-	a.Field = makeField(row.Headers())
+	result.Field = makeField(row.Headers())
 	for {
-		a.Data = append(a.Data, makeValues(row))
+		result.Data = append(result.Data, makeValues(row))
 		if !s.HasNext() {
 			break
 		}
 		row = s.Next()
 	}
 	s.Close()
-	return a
+	return result
 }
 
 func makeField(headers []string) []string {
@@ -309,7 +275,7 @@ func makeField(headers []string) []string {
 	return field
 }
 func makeValues(t *Tuple) []Value {
-	m := make([]Value, 0, TupleCapacity)
+	m := make([]Value, 0, t.Len())
 	for _, col := range t.Headers() {
 		m = append(m, t.Get(col))
 	}

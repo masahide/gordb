@@ -7,7 +7,7 @@ type Tuple struct {
 }
 
 func NewTuple() *Tuple {
-	return &Tuple{headers: make([]string, 0, 100), data: map[string]Value{}}
+	return &Tuple{headers: make([]string, 0, TupleCapacity), data: map[string]Value{}}
 }
 func (t *Tuple) Set(key string, value Value) {
 	if _, ok := t.data[key]; !ok {
