@@ -9,28 +9,40 @@ import (
 	"strings"
 )
 
-func recordToData(records [][]string) [][]Value {
+func recordToData(fields Schema, records [][]string) ([][]Value, error) {
 	result := make([][]Value, len(records))
 	for i, row := range records {
 		result[i] = make([]Value, len(row))
 		for j, v := range row {
-			result[i][j] = Value(v)
+			kind, value := inferenceType(v)
+			if kind != fields[j].Kind {
+				return nil, fmt.Errorf("Type is different. line:%d,col:%d value:%v(type:%s), want:%s", i+2, j+1, v, kind, fields[j].Kind)
+			}
+			result[i][j] = value
 		}
 	}
-	return result
+	return result, nil
 }
 
 // CSVRelational
-func NewCSVRelationalStream(r io.Reader) *Relation {
+func NewCSVRelationalStream(r io.ReadSeeker) (*Relation, error) {
+	fields, err := Inference(r)
+	if err != nil {
+		return nil, err
+	}
 	reader := csv.NewReader(r)
 	rows, err := reader.ReadAll()
 	if err != nil {
-		panic(err)
+		return nil, err
+	}
+	data, err := recordToData(fields, rows[1:])
+	if err != nil {
+		return nil, err
 	}
 	return &Relation{
-		Fields: rows[0],
-		Data:   recordToData(rows[1:]),
-	}
+		Fields: fields,
+		Data:   data,
+	}, nil
 }
 
 type Field struct {

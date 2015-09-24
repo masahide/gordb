@@ -112,17 +112,19 @@ type UnionStream struct {
 }
 
 func (s *UnionStream) Next() *Tuple {
-	if s.Input1.HasNext() {
+	switch {
+	case s.Input1.HasNext():
 		return s.Input1.Next()
-	} else if s.Input2.HasNext() {
+	case s.Input2.HasNext():
 		return s.Input2.Next()
 	}
 	return nil
 }
 func (s *UnionStream) HasNext() bool {
-	if s.Input1.HasNext() {
+	switch {
+	case s.Input1.HasNext():
 		return true
-	} else if s.Input2.HasNext() {
+	case s.Input2.HasNext():
 		return true
 	}
 	return false
@@ -247,22 +249,19 @@ func (s *CrossJoinStream) Close() {
 
 func StreamToRelation(s Stream) *Relation {
 	result := &Relation{
-		Fields: nil,
+		Fields: make(Schema, 0, TupleCapacity),
 		Data:   make([][]Value, 0, TupleCapacity),
 	}
-
-	if !s.HasNext() {
-		return result
-	}
-	row := s.Next()
-	result.Fields = row.Fields()
-	for {
-		result.Data = append(result.Data, makeValues(row))
-		if !s.HasNext() {
-			break
+	lastRow := NewTuple()
+	for s.HasNext() {
+		row := s.Next()
+		if row == nil {
+			continue
 		}
-		row = s.Next()
+		lastRow = row
+		result.Data = append(result.Data, makeValues(lastRow))
 	}
+	result.Fields = lastRow.Fields()
 	s.Close()
 	return result
 }

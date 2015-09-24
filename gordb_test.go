@@ -1,84 +1,93 @@
 package gordb
 
 import (
-	"fmt"
 	"os"
 	"reflect"
 	"testing"
-
-	"github.com/k0kubun/pp"
 )
 
 func TestCSVRelationalStream_Staff(t *testing.T) {
 	var SELECT_FROM_Staff = &Relation{
 		index:  0,
-		Fields: Schema{Field{"name", 0}, Field{"age", 0}, Field{"job", 0}},
+		Fields: Schema{Field{"name", reflect.String}, Field{"age", reflect.Int64}, Field{"job", reflect.String}},
 		Data: [][]Value{
-			[]Value{"清水", "17", "エンジニア"},
-			[]Value{"田中", "34", "デザイナー"},
-			[]Value{"佐藤", "21", "マネージャー"},
+			[]Value{"清水", int64(17), "エンジニア"},
+			[]Value{"田中", int64(34), "デザイナー"},
+			[]Value{"佐藤", int64(21), "マネージャー"},
 		},
 	}
+	//&Relation{index: 0, Fields:Schema{Field{Name:"name", Kind: 0x18}, Field{Name:"age", Kind: 0x6}, Field{Name:"job", Kind: 0x18}}, Data:[][]Value{[]Value{"清水",  17, "エンジニア"}, []Value{"田中",  34, "デザイナー"}, []Value{"佐藤",  21, "マネージャー"}}}
 
 	staff := fopen("staff.csv")
 	defer staff.Close()
-	original := NewCSVRelationalStream(staff)
+	original, err := NewCSVRelationalStream(staff)
+	if err != nil {
+		t.Error(err)
+	}
 	if !reflect.DeepEqual(original, SELECT_FROM_Staff) {
-		t.Errorf("Does not match 'SELECT * FROM Staff' original:% #v", original)
+		t.Errorf("Does not match 'SELECT * FROM Staff' original:%# v, want:%# v", original.Data, SELECT_FROM_Staff.Data)
 	}
 }
 
 func TestCSVRelationalStream_Rank(t *testing.T) {
 	var SELECT_FROM_Rank = &Relation{
 		index:  0,
-		Fields: Schema{Field{"name", 0}, Field{"rank", 0}},
+		Fields: Schema{Field{"name", reflect.String}, Field{"rank", reflect.Int64}},
 		Data: [][]Value{
-			[]Value{"清水", "78"},
-			[]Value{"田中", "46"},
-			[]Value{"佐藤", "33"},
+			[]Value{"清水", int64(78)},
+			[]Value{"田中", int64(46)},
+			[]Value{"佐藤", int64(33)},
 		},
 	}
 	rank := fopen("rank.csv")
 	defer rank.Close()
-	original := NewCSVRelationalStream(rank)
+	original, err := NewCSVRelationalStream(rank)
+	if err != nil {
+		t.Error(err)
+	}
 	if !reflect.DeepEqual(original, SELECT_FROM_Rank) {
-		t.Errorf("Does not match 'SELECT * FROM Rank' original:% #v", original)
+		t.Errorf("Does not match 'SELECT * FROM Rank' original:%# v, want:%# v", original, SELECT_FROM_Rank)
 	}
 }
 
 func TestSelectionStream(t *testing.T) {
 	var SELECT_FROM_Staff_WHERE_age_20 = &Relation{
 		index:  0,
-		Fields: Schema{Field{"name", 0}, Field{"age", 0}, Field{"job", 0}},
+		Fields: Schema{Field{"name", reflect.String}, Field{"age", reflect.Int64}, Field{"job", reflect.String}},
 		Data: [][]Value{
-			[]Value{"田中", "34", "デザイナー"},
-			[]Value{"佐藤", "21", "マネージャー"},
+			[]Value{"田中", int64(34), "デザイナー"},
+			[]Value{"佐藤", int64(21), "マネージャー"},
 		},
 	}
 	staff := fopen("staff.csv")
 	defer staff.Close()
-	relation1 := NewCSVRelationalStream(staff)
-	relation2 := &SelectionStream{relation1, "age", GreaterThan, "20"}
+	relation1, err := NewCSVRelationalStream(staff)
+	if err != nil {
+		t.Error(err)
+	}
+	relation2 := &SelectionStream{relation1, "age", GreaterThan, 20}
 	result := StreamToRelation(relation2)
 	if !reflect.DeepEqual(result, SELECT_FROM_Staff_WHERE_age_20) {
 		t.Errorf("Does not match 'SELECT * FROM Staff WHERE age > 20'\nresult:% #v,\n want:% #v", result, SELECT_FROM_Staff_WHERE_age_20)
 	}
-	pp.Print()
 }
 
 func TestProjectionStream(t *testing.T) {
 	var SELECT_age_job_FROM_Staff = &Relation{
 		index:  0,
-		Fields: Schema{Field{"age", 0}, Field{"job", 0}},
+		Fields: Schema{Field{"age", reflect.Int64}, Field{"job", reflect.String}},
 		Data: [][]Value{
-			[]Value{"17", "エンジニア"},
-			[]Value{"34", "デザイナー"},
-			[]Value{"21", "マネージャー"},
+			[]Value{int64(17), "エンジニア"},
+			[]Value{int64(34), "デザイナー"},
+			[]Value{int64(21), "マネージャー"},
 		},
 	}
 	staff := fopen("staff.csv")
 	defer staff.Close()
-	relation1 := NewCSVRelationalStream(staff)
+	relation1, err := NewCSVRelationalStream(staff)
+	if err != nil {
+		t.Error(err)
+	}
 	relation2 := &ProjectionStream{relation1, []string{"age", "job"}}
 	result := StreamToRelation(relation2)
 	if !reflect.DeepEqual(result, SELECT_age_job_FROM_Staff) {
@@ -89,19 +98,25 @@ func TestProjectionStream(t *testing.T) {
 func TestJoinStream(t *testing.T) {
 	var SELECT_FROM_Staff_Rank_WHERE_staff_name_rank_name = &Relation{
 		index:  0,
-		Fields: Schema{Field{"name", 0}, Field{"age", 0}, Field{"job", 0}, Field{"rank", 0}},
+		Fields: Schema{Field{"name", reflect.String}, Field{"age", reflect.Int64}, Field{"job", reflect.String}, Field{"rank", reflect.Int64}},
 		Data: [][]Value{
-			[]Value{"清水", "17", "エンジニア", "78"},
-			[]Value{"田中", "34", "デザイナー", "46"},
-			[]Value{"佐藤", "21", "マネージャー", "33"},
+			[]Value{"清水", int64(17), "エンジニア", int64(78)},
+			[]Value{"田中", int64(34), "デザイナー", int64(46)},
+			[]Value{"佐藤", int64(21), "マネージャー", int64(33)},
 		},
 	}
 	staff := fopen("staff.csv")
 	defer staff.Close()
 	rank := fopen("rank.csv")
 	defer rank.Close()
-	relation1 := NewCSVRelationalStream(staff)
-	relation2 := NewCSVRelationalStream(rank)
+	relation1, err := NewCSVRelationalStream(staff)
+	if err != nil {
+		t.Error(err)
+	}
+	relation2, err := NewCSVRelationalStream(rank)
+	if err != nil {
+		t.Error(err)
+	}
 	relation3 := &JoinStream{Input1: relation1, Attr1: "name", Input2: relation2, Attr2: "name", Selector: Equal}
 	result := StreamToRelation(relation3)
 	if !reflect.DeepEqual(result, SELECT_FROM_Staff_Rank_WHERE_staff_name_rank_name) {
@@ -110,32 +125,63 @@ func TestJoinStream(t *testing.T) {
 }
 
 func TestCrossJoinStream(t *testing.T) {
-	var SELECT_FROM_Staff_CROSS_JOIN_Rank = &Relation{
+	var want = &Relation{
 		index:  0,
-		Fields: Schema{Field{"name", 0}, Field{"age", 0}, Field{"job", 0}, Field{"name2", 0}, Field{"rank", 0}},
+		Fields: Schema{Field{"name", reflect.String}, Field{"age", reflect.Int64}, Field{"job", reflect.String}, Field{"name2", reflect.String}, Field{"rank", reflect.Int64}},
 		Data: [][]Value{
-			[]Value{"清水", "17", "エンジニア", "清水", "78"},
-			[]Value{"清水", "17", "エンジニア", "田中", "46"},
-			[]Value{"清水", "17", "エンジニア", "佐藤", "33"},
-			[]Value{"田中", "34", "デザイナー", "清水", "78"},
-			[]Value{"田中", "34", "デザイナー", "田中", "46"},
-			[]Value{"田中", "34", "デザイナー", "佐藤", "33"},
-			[]Value{"佐藤", "21", "マネージャー", "清水", "78"},
-			[]Value{"佐藤", "21", "マネージャー", "田中", "46"},
-			[]Value{"佐藤", "21", "マネージャー", "佐藤", "33"},
+			[]Value{"清水", int64(17), "エンジニア", "清水", int64(78)},
+			[]Value{"清水", int64(17), "エンジニア", "田中", int64(46)},
+			[]Value{"清水", int64(17), "エンジニア", "佐藤", int64(33)},
+			[]Value{"田中", int64(34), "デザイナー", "清水", int64(78)},
+			[]Value{"田中", int64(34), "デザイナー", "田中", int64(46)},
+			[]Value{"田中", int64(34), "デザイナー", "佐藤", int64(33)},
+			[]Value{"佐藤", int64(21), "マネージャー", "清水", int64(78)},
+			[]Value{"佐藤", int64(21), "マネージャー", "田中", int64(46)},
+			[]Value{"佐藤", int64(21), "マネージャー", "佐藤", int64(33)},
 		},
 	}
 	staff := fopen("staff.csv")
 	defer staff.Close()
 	rank := fopen("rank.csv")
 	defer rank.Close()
-	relation1 := NewCSVRelationalStream(staff)
-	relation2 := NewCSVRelationalStream(rank)
+	relation1, err := NewCSVRelationalStream(staff)
+	if err != nil {
+		t.Error(err)
+	}
+	relation2, err := NewCSVRelationalStream(rank)
+	if err != nil {
+		t.Error(err)
+	}
 	relation3 := &CrossJoinStream{Input1: relation1, Input2: &RenameStream{relation2, "name", "name2"}}
 	result := StreamToRelation(relation3)
-	fmt.Println("")
-	if !reflect.DeepEqual(result, SELECT_FROM_Staff_CROSS_JOIN_Rank) {
+	if !reflect.DeepEqual(result, want) {
 		t.Errorf("Does not match 'SELECT * FROM Staff CROSS JOIN Rank' result:% #v", result)
+	}
+}
+
+func TestEmpty(t *testing.T) {
+	var want = &Relation{
+		index:  0,
+		Fields: Schema{},
+		Data:   [][]Value{},
+	}
+	staff := fopen("staff.csv")
+	defer staff.Close()
+	rank := fopen("rank.csv")
+	defer rank.Close()
+	relation1, err := NewCSVRelationalStream(staff)
+	if err != nil {
+		t.Error(err)
+	}
+	relation2, err := NewCSVRelationalStream(rank)
+	if err != nil {
+		t.Error(err)
+	}
+	relation3 := &CrossJoinStream{Input1: relation1, Input2: &RenameStream{relation2, "name", "name2"}}
+	relation4 := &SelectionStream{relation3, "age", GreaterThan, 100}
+	result := StreamToRelation(relation4)
+	if !reflect.DeepEqual(result, want) {
+		t.Errorf("Does not match 'SELECT * FROM Staff CROSS JOIN Rank where age > 100' result:% #v", result)
 	}
 }
 
