@@ -9,14 +9,16 @@ import (
 	"strings"
 )
 
-func recordToData(fields Schema, records [][]string) ([][]Value, error) {
+const inferenceRowSize = 4
+
+func recordToData(attrs Schema, records [][]string) ([][]Value, error) {
 	result := make([][]Value, len(records))
 	for i, row := range records {
 		result[i] = make([]Value, len(row))
 		for j, v := range row {
 			kind, value := inferenceType(v)
-			if kind != fields[j].Kind {
-				return nil, fmt.Errorf("Type is different. line:%d,col:%d value:%v(type:%s), want:%s", i+2, j+1, v, kind, fields[j].Kind)
+			if kind != attrs[j].Kind {
+				return nil, fmt.Errorf("Type is different. line:%d,col:%d value:%v(type:%s), want:%s", i+2, j+1, v, kind, attrs[j].Kind)
 			}
 			result[i][j] = value
 		}
@@ -26,7 +28,7 @@ func recordToData(fields Schema, records [][]string) ([][]Value, error) {
 
 // CSVRelational
 func NewCSVRelationalStream(r io.ReadSeeker) (*Relation, error) {
-	fields, err := Inference(r)
+	attrs, err := typeInference(r)
 	if err != nil {
 		return nil, err
 	}
@@ -35,26 +37,17 @@ func NewCSVRelationalStream(r io.ReadSeeker) (*Relation, error) {
 	if err != nil {
 		return nil, err
 	}
-	data, err := recordToData(fields, rows[1:])
+	data, err := recordToData(attrs, rows[1:])
 	if err != nil {
 		return nil, err
 	}
 	return &Relation{
-		Fields: fields,
-		Data:   data,
+		Attrs: attrs,
+		Data:  data,
 	}, nil
 }
 
-type Field struct {
-	Name string
-	reflect.Kind
-}
-
-type Schema []Field
-
-const inferenceRowSize = 4
-
-func Inference(r io.ReadSeeker) (Schema, error) {
+func typeInference(r io.ReadSeeker) (Schema, error) {
 	reader := csv.NewReader(r)
 	defer r.Seek(0, 0)
 	records := make([][]string, 0, inferenceRowSize)
@@ -72,12 +65,12 @@ func Inference(r io.ReadSeeker) (Schema, error) {
 
 	record := records[0]
 	s := make(Schema, len(record))
-	for i, field := range record {
-		s[i].Name = field
+	for i, attr := range record {
+		s[i].Name = attr
 	}
 	for _, record := range records[1:] {
-		for i, field := range record {
-			kind, _ := inferenceType(field)
+		for i, attr := range record {
+			kind, _ := inferenceType(attr)
 			if s[i].Kind == reflect.Invalid {
 				s[i].Kind = kind
 				continue

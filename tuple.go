@@ -2,44 +2,44 @@
 package gordb
 
 type Tuple struct {
-	fields Schema
-	data   map[string]Value
+	attrs Schema
+	data  map[string]Value
 }
 
 func NewTuple() *Tuple {
-	return &Tuple{fields: make(Schema, 0, TupleCapacity), data: map[string]Value{}}
+	return &Tuple{attrs: make(Schema, 0, TupleCapacity), data: map[string]Value{}}
 }
-func (t *Tuple) Set(field Field, value Value) {
-	if _, ok := t.data[field.Name]; !ok {
-		t.fields = append(t.fields, field)
+func (t *Tuple) Set(attr Attr, value Value) {
+	if _, ok := t.data[attr.Name]; !ok {
+		t.attrs = append(t.attrs, attr)
 	}
-	t.data[field.Name] = value
+	t.data[attr.Name] = value
 }
-func (t *Tuple) Get(fieldName string) Value {
-	v, _ := t.data[fieldName]
+func (t *Tuple) Get(attrName string) Value {
+	v, _ := t.data[attrName]
 	return v
 }
 
-func (t *Tuple) GetField(fieldName string) Field {
-	for _, f := range t.fields {
-		if f.Name == fieldName {
+func (t *Tuple) GetAttr(attrName string) Attr {
+	for _, f := range t.attrs {
+		if f.Name == attrName {
 			return f
 		}
 	}
-	return Field{}
+	return Attr{}
 }
 
 func (t *Tuple) Len() int {
 	return len(t.data)
 }
 
-func (t *Tuple) Fields() Schema {
-	return t.fields
+func (t *Tuple) Attrs() Schema {
+	return t.attrs
 }
 
-func (t *Tuple) Iterator(cb func(i int, field Field, value Value) error) error {
-	for i, field := range t.Fields() {
-		if err := cb(i, field, t.data[field.Name]); err != nil {
+func (t *Tuple) Iterator(cb func(i int, attr Attr, value Value) error) error {
+	for i, attr := range t.Attrs() {
+		if err := cb(i, attr, t.data[attr.Name]); err != nil {
 			return err
 		}
 	}

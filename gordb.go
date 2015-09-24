@@ -10,9 +10,9 @@ type Stream interface {
 }
 
 type Relation struct {
-	index  int
-	Fields Schema
-	Data   [][]Value
+	index int
+	Attrs Schema
+	Data  [][]Value
 }
 
 func (r *Relation) HasNext() bool {
@@ -24,11 +24,18 @@ func (r *Relation) Close() {
 
 func (r *Relation) Next() *Tuple {
 	tuple := NewTuple()
-	for i, field := range r.Fields {
-		tuple.Set(field, r.Data[r.index][i])
+	for i, attr := range r.Attrs {
+		tuple.Set(attr, r.Data[r.index][i])
 	}
 	r.index++
 	return tuple
+}
+
+func (r *Relation) Copy() *Relation {
+	return &Relation{
+		Attrs: r.Attrs,
+		Data:  r.Data,
+	}
 }
 
 // Selection
@@ -66,7 +73,7 @@ func (s *ProjectionStream) Next() *Tuple {
 	tuple := s.Input.Next()
 	result := NewTuple()
 	for _, Attr := range s.Attrs {
-		result.Set(tuple.GetField(Attr), tuple.Get(Attr))
+		result.Set(tuple.GetAttr(Attr), tuple.Get(Attr))
 	}
 	return result
 }
@@ -87,12 +94,12 @@ type RenameStream struct {
 func (s *RenameStream) Next() *Tuple {
 	result := NewTuple()
 	tuple := s.Input.Next()
-	tuple.Iterator(func(i int, field Field, value Value) error {
-		if field.Name == s.Attr {
-			result.Set(Field{s.Name, field.Kind}, value)
+	tuple.Iterator(func(i int, attr Attr, value Value) error {
+		if attr.Name == s.Attr {
+			result.Set(Attr{s.Name, attr.Kind}, value)
 			return nil
 		}
-		result.Set(field, value)
+		result.Set(attr, value)
 		return nil
 	})
 	return result
@@ -107,8 +114,7 @@ func (s *RenameStream) Close() {
 
 // Union
 type UnionStream struct {
-	Input1 Stream
-	Input2 Stream
+	Input1, Input2 Stream
 }
 
 func (s *UnionStream) Next() *Tuple {
@@ -162,11 +168,11 @@ func (s *JoinStream) Next() *Tuple {
 	s.index++
 	if s.Selector(s.currentTuple.Get(s.Attr1), targetTuple.Get(s.Attr2)) {
 		result := NewTuple()
-		s.currentTuple.Iterator(func(i int, f Field, value Value) error {
+		s.currentTuple.Iterator(func(i int, f Attr, value Value) error {
 			result.Set(f, value)
 			return nil
 		})
-		targetTuple.Iterator(func(i int, f Field, value Value) error {
+		targetTuple.Iterator(func(i int, f Attr, value Value) error {
 			result.Set(f, value)
 			return nil
 		})
@@ -220,11 +226,11 @@ func (s *CrossJoinStream) Next() *Tuple {
 	targetTuple := s.tuples[s.index]
 	s.index++
 	result := NewTuple()
-	s.currentTuple.Iterator(func(i int, f Field, value Value) error {
+	s.currentTuple.Iterator(func(i int, f Attr, value Value) error {
 		result.Set(f, value)
 		return nil
 	})
-	targetTuple.Iterator(func(i int, f Field, value Value) error {
+	targetTuple.Iterator(func(i int, f Attr, value Value) error {
 		result.Set(f, value)
 		return nil
 	})
@@ -249,8 +255,8 @@ func (s *CrossJoinStream) Close() {
 
 func StreamToRelation(s Stream) *Relation {
 	result := &Relation{
-		Fields: make(Schema, 0, TupleCapacity),
-		Data:   make([][]Value, 0, TupleCapacity),
+		Attrs: make(Schema, 0, TupleCapacity),
+		Data:  make([][]Value, 0, TupleCapacity),
 	}
 	lastRow := NewTuple()
 	for s.HasNext() {
@@ -261,14 +267,14 @@ func StreamToRelation(s Stream) *Relation {
 		lastRow = row
 		result.Data = append(result.Data, makeValues(lastRow))
 	}
-	result.Fields = lastRow.Fields()
+	result.Attrs = lastRow.Attrs()
 	s.Close()
 	return result
 }
 
 func makeValues(t *Tuple) []Value {
 	m := make([]Value, 0, t.Len())
-	for _, col := range t.Fields() {
+	for _, col := range t.Attrs() {
 		m = append(m, t.Get(col.Name))
 	}
 	return m
