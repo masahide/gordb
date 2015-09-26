@@ -1,6 +1,7 @@
 gordb
 =====
 
+[![Build Status](https://drone.io/github.com/masahide/gordb/status.png)](https://drone.io/github.com/masahide/gordb/latest)
 
 ### Relational database term
 
