@@ -1,96 +1,159 @@
 package gordb
 
 import (
-	"fmt"
-	"os"
+	"reflect"
 	"testing"
 )
 
-func TestCSVRelationalStream(t *testing.T) {
-	staff := fopen("staff.csv")
-	defer staff.Close()
-	original := NewCSVRelationalStream(staff)
-	fmt.Println("SELECT * FROM Staff")
-	printData(original)
-	rank := fopen("rank.csv")
-	defer rank.Close()
-	original = NewCSVRelationalStream(rank)
-	fmt.Println("SELECT * FROM Rank")
-	printData(original)
+func TestCSVRelationalStream_Staff(t *testing.T) {
+	var SELECT_FROM_Staff = &Relation{
+		Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
+		Data: [][]Value{
+			[]Value{"清水", int64(17), "エンジニア"},
+			[]Value{"田中", int64(34), "デザイナー"},
+			[]Value{"佐藤", int64(21), "マネージャー"},
+		},
+	}
+	//&Relation{index: 0, Attrs:Schema{Attr{Name:"name", Kind: 0x18}, Attr{Name:"age", Kind: 0x6}, Attr{Name:"job", Kind: 0x18}}, Data:[][]Value{[]Value{"清水",  17, "エンジニア"}, []Value{"田中",  34, "デザイナー"}, []Value{"佐藤",  21, "マネージャー"}}}
+
+	/*
+		original, err := LoadCsv("staff.csv")
+	*/
+	original := &Relation{Name: "test/staff1"}
+	result, err := StreamToRelation(Stream{Relation: original}, testData)
+	if err != nil {
+		t.Error(err)
+	}
+	if !reflect.DeepEqual(result.Data, SELECT_FROM_Staff.Data) {
+		t.Errorf("Does not match 'SELECT * FROM Staff' original:%# v, want:%# v", result.Data, SELECT_FROM_Staff.Data)
+	}
+}
+
+func TestCSVRelationalStream_Rank(t *testing.T) {
+	var want = &Relation{
+		Name:  "rank",
+		index: 0,
+		Attrs: Schema{Attr{"name", reflect.String}, Attr{"rank", reflect.Int64}},
+		Data: [][]Value{
+			[]Value{"清水", int64(78)},
+			[]Value{"田中", int64(46)},
+			[]Value{"佐藤", int64(33)},
+		},
+	}
+	original := &Relation{Name: "test/rank1"}
+	result, err := StreamToRelation(Stream{Relation: original}, testData)
+	if err != nil {
+		t.Error(err)
+	}
+	if !reflect.DeepEqual(result.Data, want.Data) {
+		t.Errorf("Does not match 'SELECT * FROM Rank' original:%# v, want:%# v", result.Data, want.Data)
+	}
 }
 
 func TestSelectionStream(t *testing.T) {
-	staff := fopen("staff.csv")
-	defer staff.Close()
-	fmt.Println("SELECT * FROM Staff WHERE age > 20")
-	relation1 := NewCSVRelationalStream(staff)
-	relation2 := &SelectionStream{relation1, "age", GreaterThan, "20"}
-	printData(relation2)
+	var want = &Relation{
+		index: 0,
+		Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
+		Data: [][]Value{
+			[]Value{"田中", int64(34), "デザイナー"},
+			[]Value{"佐藤", int64(21), "マネージャー"},
+		},
+	}
+	stream2 := &SelectionStream{Stream{Relation: &Relation{Name: "test/staff1"}}, "age", GreaterThan, 20}
+	result, _ := StreamToRelation(Stream{Selection: stream2}, testData)
+	if !reflect.DeepEqual(result, want) {
+		t.Errorf("Does not match 'SELECT * FROM Staff WHERE age > 20'\nresult:% #v,\n want:% #v", result, want)
+	}
 }
 
 func TestProjectionStream(t *testing.T) {
-	staff := fopen("staff.csv")
-	defer staff.Close()
-	fmt.Println("SELECT age,job FROM Staff")
-	relation1 := NewCSVRelationalStream(staff)
-	relation2 := &ProjectionStream{relation1, []string{"age", "job"}}
-	printData(relation2)
+	var want = &Relation{
+		index: 0,
+		Attrs: Schema{Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
+		Data: [][]Value{
+			[]Value{int64(17), "エンジニア"},
+			[]Value{int64(34), "デザイナー"},
+			[]Value{int64(21), "マネージャー"},
+		},
+	}
+	stream2 := &ProjectionStream{Stream{Relation: &Relation{Name: "test/staff1"}}, []string{"age", "job"}}
+	result, _ := StreamToRelation(Stream{Projection: stream2}, testData)
+	if !reflect.DeepEqual(result, want) {
+		t.Errorf("Does not match 'SELECT age,job FROM Staff'\nresult:% #v,\n want:% #v", result, want)
+	}
 }
 
 func TestJoinStream(t *testing.T) {
-	staff := fopen("staff.csv")
-	defer staff.Close()
-	rank := fopen("rank.csv")
-	defer rank.Close()
-	fmt.Println("SELECT * FROM Staff, Rank WHERE staff.name = rank.name")
-	relation1 := NewCSVRelationalStream(staff)
-	relation2 := NewCSVRelationalStream(rank)
-	relation3 := &JoinStream{Input1: relation1, Attr1: "name", Input2: relation2, Attr2: "name", Selector: Equal}
-	printData(relation3)
+	var SELECT_FROM_Staff_Rank_WHERE_staff_name_rank_name = &Relation{
+		index: 0,
+		Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}, Attr{"rank", reflect.Int64}},
+		Data: [][]Value{
+			[]Value{"清水", int64(17), "エンジニア", int64(78)},
+			[]Value{"田中", int64(34), "デザイナー", int64(46)},
+			[]Value{"佐藤", int64(21), "マネージャー", int64(33)},
+		},
+	}
+	stream3 := &JoinStream{
+		Input1:   Stream{Relation: &Relation{Name: "test/staff1"}},
+		Attr1:    "name",
+		Input2:   Stream{Relation: &Relation{Name: "test/rank1"}},
+		Attr2:    "name",
+		Selector: Equal,
+	}
+	result, _ := StreamToRelation(Stream{Join: stream3}, testData)
+	if !reflect.DeepEqual(result, SELECT_FROM_Staff_Rank_WHERE_staff_name_rank_name) {
+		t.Errorf("Does not match 'SELECT * FROM Staff, Rank WHERE staff.name = rank.name' result:% #v", result)
+	}
 }
 
 func TestCrossJoinStream(t *testing.T) {
-	staff := fopen("staff.csv")
-	defer staff.Close()
-	rank := fopen("rank.csv")
-	defer rank.Close()
-	fmt.Println("SELECT * FROM Staff CROSS JOIN Rank")
-	relation1 := NewCSVRelationalStream(staff)
-	relation2 := NewCSVRelationalStream(rank)
-	relation3 := &CrossJoinStream{Input1: relation1, Input2: &RenameStream{relation2, "name", "name2"}}
-	printData(relation3)
+	var want = &Relation{
+		index: 0,
+		Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}, Attr{"name2", reflect.String}, Attr{"rank", reflect.Int64}},
+		Data: [][]Value{
+			[]Value{"清水", int64(17), "エンジニア", "清水", int64(78)},
+			[]Value{"清水", int64(17), "エンジニア", "田中", int64(46)},
+			[]Value{"清水", int64(17), "エンジニア", "佐藤", int64(33)},
+			[]Value{"田中", int64(34), "デザイナー", "清水", int64(78)},
+			[]Value{"田中", int64(34), "デザイナー", "田中", int64(46)},
+			[]Value{"田中", int64(34), "デザイナー", "佐藤", int64(33)},
+			[]Value{"佐藤", int64(21), "マネージャー", "清水", int64(78)},
+			[]Value{"佐藤", int64(21), "マネージャー", "田中", int64(46)},
+			[]Value{"佐藤", int64(21), "マネージャー", "佐藤", int64(33)},
+		},
+	}
+	stream3 := &CrossJoinStream{
+		Input1: Stream{Relation: &Relation{Name: "test/staff1"}},
+		Input2: Stream{Rename: &RenameStream{Stream{Relation: &Relation{Name: "test/rank1"}}, "name", "name2"}}}
+	result, _ := StreamToRelation(Stream{CrossJoin: stream3}, testData)
+	if !reflect.DeepEqual(result, want) {
+		t.Errorf("Does not match 'SELECT * FROM Staff CROSS JOIN Rank' result:% #v", result)
+	}
 }
 
-func printData(s Stream) {
-	var cols []string
-	isHeaderWritten := false
-	for s.HasNext() {
-		row := s.Next()
-		if !isHeaderWritten {
-			cols = make([]string, 0, len(row))
-			for col, _ := range row {
-				cols = append(cols, col)
-			}
-			fmt.Printf("|")
-			for _, col := range cols {
-				fmt.Printf("%14s|", col)
-			}
-			fmt.Printf("\n")
-			isHeaderWritten = true
-		}
-		fmt.Printf("|")
-		for _, col := range cols {
-			fmt.Printf("%14s|", row[col])
-		}
-		fmt.Printf("\n")
+func TestEmpty(t *testing.T) {
+	var want = &Relation{
+		index: 0,
+		Attrs: Schema{},
+		Data:  [][]Value{},
 	}
-	s.Close()
-}
-
-func fopen(fn string) *os.File {
-	f, err := os.Open(fn)
-	if err != nil {
-		panic(err)
+	stream := Stream{
+		Selection: &SelectionStream{
+			Stream{
+				CrossJoin: &CrossJoinStream{
+					Input1: Stream{Relation: &Relation{Name: "test/staff1"}},
+					Input2: Stream{
+						Rename: &RenameStream{
+							Stream{Relation: &Relation{Name: "test/rank1"}},
+							"name", "name2"},
+					},
+				},
+			},
+			"age", GreaterThan, 100,
+		},
 	}
-	return f
+	result, _ := StreamToRelation(stream, testData)
+	if !reflect.DeepEqual(result, want) {
+		t.Errorf("Does not match 'SELECT * FROM Staff CROSS JOIN Rank where age > 100' result:% #v", result)
+	}
 }
