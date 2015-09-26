@@ -2,9 +2,9 @@ package core
 
 type Relation struct {
 	index int
-	Name  string `json:"name"`
-	Attrs Schema
-	Data  [][]Value
+	Name  string    `json:"name,omitempty" `
+	Attrs Schema    `json:"attrs"`
+	Data  [][]Value `json:"data"`
 }
 
 func (r *Relation) HasNext() bool {
