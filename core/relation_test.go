@@ -1,4 +1,4 @@
-package gordb
+package core
 
 import (
 	"encoding/json"

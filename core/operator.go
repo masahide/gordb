@@ -1,5 +1,5 @@
 // go-rdb Operator
-package gordb
+package core
 
 import (
 	"encoding/json"

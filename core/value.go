@@ -1,5 +1,5 @@
 // go-rdb Value
-package gordb
+package core
 
 import "reflect"
 

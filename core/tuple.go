@@ -1,5 +1,5 @@
 // go-rdb Tuple
-package gordb
+package core
 
 type Tuple struct {
 	attrs Schema
