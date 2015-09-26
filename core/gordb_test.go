@@ -1,11 +1,11 @@
-package gordb
+package core
 
 import (
 	"reflect"
 	"testing"
 )
 
-func TestCSVRelationalStream_Staff(t *testing.T) {
+func TestRelationalStream_Staff(t *testing.T) {
 	var SELECT_FROM_Staff = &Relation{
 		Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
 		Data: [][]Value{
@@ -14,11 +14,7 @@ func TestCSVRelationalStream_Staff(t *testing.T) {
 			[]Value{"佐藤", int64(21), "マネージャー"},
 		},
 	}
-	//&Relation{index: 0, Attrs:Schema{Attr{Name:"name", Kind: 0x18}, Attr{Name:"age", Kind: 0x6}, Attr{Name:"job", Kind: 0x18}}, Data:[][]Value{[]Value{"清水",  17, "エンジニア"}, []Value{"田中",  34, "デザイナー"}, []Value{"佐藤",  21, "マネージャー"}}}
 
-	/*
-		original, err := LoadCsv("staff.csv")
-	*/
 	original := &Relation{Name: "test/staff1"}
 	result, err := StreamToRelation(Stream{Relation: original}, testData)
 	if err != nil {
@@ -29,7 +25,7 @@ func TestCSVRelationalStream_Staff(t *testing.T) {
 	}
 }
 
-func TestCSVRelationalStream_Rank(t *testing.T) {
+func TestRelationalStream_Rank(t *testing.T) {
 	var want = &Relation{
 		Name:  "rank",
 		index: 0,

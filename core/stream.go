@@ -1,4 +1,4 @@
-package gordb
+package core
 
 import "errors"
 
@@ -16,23 +16,10 @@ type Stream struct {
 func (s *Stream) Init(n *Node) error {
 	c := s.getStream()
 	if c == nil {
-		return errors.New("")
+		return errors.New("unkown stream type")
 	}
 	return c.Init(n)
 }
-
-/*
-func (s *Stream) Next() *Tuple {
-	return s.getStream().Next()
-}
-func (s *Stream) HasNext() bool {
-	stream := s.getStream()
-	return stream.HasNext()
-}
-func (s *Stream) Close() {
-	s.getStream().Close()
-}
-*/
 
 func (s *Stream) getStream() stream {
 	if s.stream != nil {

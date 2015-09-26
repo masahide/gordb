@@ -1,7 +1,7 @@
-package gordb
+package csv
 
 import (
-	"encoding/csv"
+	enc "encoding/csv"
 	"fmt"
 	"io"
 	"os"
@@ -9,14 +9,16 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/masahide/gordb/core"
 )
 
 const inferenceRowSize = 4
 
-func recordToData(attrs Schema, records [][]string) ([][]Value, error) {
-	result := make([][]Value, len(records))
+func recordToData(attrs core.Schema, records [][]string) ([][]core.Value, error) {
+	result := make([][]core.Value, len(records))
 	for i, row := range records {
-		result[i] = make([]Value, len(row))
+		result[i] = make([]core.Value, len(row))
 		for j, v := range row {
 			kind, value := inferenceType(v)
 			if kind != attrs[j].Kind {
@@ -28,7 +30,7 @@ func recordToData(attrs Schema, records [][]string) ([][]Value, error) {
 	return result, nil
 }
 
-func LoadCsv(filename string) (*Relation, error) {
+func LoadCsv(filename string) (*core.Relation, error) {
 	f := fopen(filename)
 	defer f.Close()
 	original, err := NewCSVRelationalStream(f)
@@ -46,12 +48,12 @@ func fopen(fn string) *os.File {
 }
 
 // CSVRelational
-func NewCSVRelationalStream(r io.ReadSeeker) (*Relation, error) {
+func NewCSVRelationalStream(r io.ReadSeeker) (*core.Relation, error) {
 	attrs, err := typeInference(r)
 	if err != nil {
 		return nil, err
 	}
-	reader := csv.NewReader(r)
+	reader := enc.NewReader(r)
 	rows, err := reader.ReadAll()
 	if err != nil {
 		return nil, err
@@ -60,14 +62,14 @@ func NewCSVRelationalStream(r io.ReadSeeker) (*Relation, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Relation{
+	return &core.Relation{
 		Attrs: attrs,
 		Data:  data,
 	}, nil
 }
 
-func typeInference(r io.ReadSeeker) (Schema, error) {
-	reader := csv.NewReader(r)
+func typeInference(r io.ReadSeeker) (core.Schema, error) {
+	reader := enc.NewReader(r)
 	defer r.Seek(0, 0)
 	records := make([][]string, 0, inferenceRowSize)
 	i := 0
@@ -83,7 +85,7 @@ func typeInference(r io.ReadSeeker) (Schema, error) {
 	}
 
 	record := records[0]
-	s := make(Schema, len(record))
+	s := make(core.Schema, len(record))
 	for i, attr := range record {
 		s[i].Name = attr
 	}
