@@ -1,6 +1,9 @@
 package core
 
-import "reflect"
+import (
+	"encoding/json"
+	"reflect"
+)
 
 type Attr struct {
 	Name string
@@ -8,3 +11,7 @@ type Attr struct {
 }
 
 type Schema []Attr
+
+func (a Attr) MarshalJSON() ([]byte, error) {
+	return json.Marshal(a.Name)
+}
