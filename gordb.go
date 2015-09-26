@@ -3,47 +3,12 @@ package gordb
 
 const TupleCapacity = 100
 
-type Stream interface {
-	Next() *Tuple
-	HasNext() bool
-	Close()
-}
-
-type Relation struct {
-	index int
-	Attrs Schema
-	Data  [][]Value
-}
-
-func (r *Relation) HasNext() bool {
-	return r.index < len(r.Data)
-}
-func (r *Relation) Close() {
-	r.index = 0
-}
-
-func (r *Relation) Next() *Tuple {
-	tuple := NewTuple()
-	for i, attr := range r.Attrs {
-		tuple.Set(attr, r.Data[r.index][i])
-	}
-	r.index++
-	return tuple
-}
-
-func (r *Relation) Copy() *Relation {
-	return &Relation{
-		Attrs: r.Attrs,
-		Data:  r.Data,
-	}
-}
-
 // Selection
 type SelectionStream struct {
-	Input    Stream
-	Attr     string
-	Selector Operator
-	Arg      Value
+	Input    Stream   `json:"input"`
+	Attr     string   `json:"attr"`
+	Selector Operator `json:"selector"`
+	Arg      Value    `json:"arg"`
 }
 
 func (s *SelectionStream) Next() *Tuple {
@@ -59,14 +24,19 @@ func (s *SelectionStream) Next() *Tuple {
 func (s *SelectionStream) HasNext() bool {
 	return s.Input.HasNext()
 }
+
+func (s *SelectionStream) Init(n *Node) error {
+	return s.Input.Init(n)
+}
+
 func (s *SelectionStream) Close() {
 	s.Input.Close()
 }
 
 // Projection
 type ProjectionStream struct {
-	Input Stream
-	Attrs []string
+	Input Stream   `json:"input"`
+	Attrs []string `json:"attrs"`
 }
 
 func (s *ProjectionStream) Next() *Tuple {
@@ -80,15 +50,19 @@ func (s *ProjectionStream) Next() *Tuple {
 func (s *ProjectionStream) HasNext() bool {
 	return s.Input.HasNext()
 }
+func (s *ProjectionStream) Init(n *Node) error {
+	return s.Input.Init(n)
+}
+
 func (s *ProjectionStream) Close() {
 	s.Input.Close()
 }
 
 // Rename
 type RenameStream struct {
-	Input Stream
-	Attr  string
-	Name  string
+	Input Stream `json:"input"`
+	Attr  string `json:"from"`
+	Name  string `json:"to"`
 }
 
 func (s *RenameStream) Next() *Tuple {
@@ -108,13 +82,17 @@ func (s *RenameStream) Next() *Tuple {
 func (s *RenameStream) HasNext() bool {
 	return s.Input.HasNext()
 }
+func (s *RenameStream) Init(n *Node) error {
+	return s.Input.Init(n)
+}
 func (s *RenameStream) Close() {
 	s.Input.Close()
 }
 
 // Union
 type UnionStream struct {
-	Input1, Input2 Stream
+	Input1 Stream `json:"input1"`
+	Input2 Stream `json:"input2"`
 }
 
 func (s *UnionStream) Next() *Tuple {
@@ -135,6 +113,12 @@ func (s *UnionStream) HasNext() bool {
 	}
 	return false
 }
+func (s *UnionStream) Init(n *Node) error {
+	if err := s.Input1.Init(n); err != nil {
+		return err
+	}
+	return s.Input2.Init(n)
+}
 func (s *UnionStream) Close() {
 	s.Input1.Close()
 	s.Input2.Close()
@@ -142,9 +126,11 @@ func (s *UnionStream) Close() {
 
 // Join
 type JoinStream struct {
-	Input1, Input2 Stream
-	Attr1, Attr2   string
-	Selector       Operator
+	Input1   Stream   `json:"input1"`
+	Input2   Stream   `json:"input2"`
+	Attr1    string   `json:"attr1"`
+	Attr2    string   `json:"attr2"`
+	Selector Operator `json:"selector"`
 
 	index        int
 	tuples       []*Tuple
@@ -196,6 +182,12 @@ func (s *JoinStream) HasNext() bool {
 	}
 	return s.Input1.HasNext()
 }
+func (s *JoinStream) Init(n *Node) error {
+	if err := s.Input1.Init(n); err != nil {
+		return err
+	}
+	return s.Input2.Init(n)
+}
 func (s *JoinStream) Close() {
 	s.Input1.Close()
 	s.Input2.Close()
@@ -203,7 +195,8 @@ func (s *JoinStream) Close() {
 
 // CrossJoin
 type CrossJoinStream struct {
-	Input1, Input2 Stream
+	Input1 Stream `json:"input1"`
+	Input2 Stream `json:"input2"`
 
 	index        int
 	tuples       []*Tuple
@@ -248,12 +241,22 @@ func (s *CrossJoinStream) HasNext() bool {
 	}
 	return s.Input1.HasNext()
 }
+func (s *CrossJoinStream) Init(n *Node) error {
+	if err := s.Input1.Init(n); err != nil {
+		return err
+	}
+	return s.Input2.Init(n)
+}
 func (s *CrossJoinStream) Close() {
 	s.Input1.Close()
 	s.Input2.Close()
 }
 
-func StreamToRelation(s Stream) *Relation {
+func StreamToRelation(s Stream, n *Node) (*Relation, error) {
+	err := s.Init(n)
+	if err != nil {
+		return nil, err
+	}
 	result := &Relation{
 		Attrs: make(Schema, 0, TupleCapacity),
 		Data:  make([][]Value, 0, TupleCapacity),
@@ -269,7 +272,7 @@ func StreamToRelation(s Stream) *Relation {
 	}
 	result.Attrs = lastRow.Attrs()
 	s.Close()
-	return result
+	return result, nil
 }
 
 func makeValues(t *Tuple) []Value {

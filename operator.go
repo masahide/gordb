@@ -1,9 +1,33 @@
 // go-rdb Operator
 package gordb
 
-import "reflect"
+import (
+	"encoding/json"
+	"fmt"
+	"reflect"
+)
 
 type Operator func(Value, Value) bool
+
+func (ss *Operator) UnmarshalJSON(data []byte) error {
+	// Extract the string from data.
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("operator should be a string, got %s", data)
+	}
+
+	// The rest is equivalen to Operator.
+	got, ok := map[string]Operator{
+		">":  GreaterThan,
+		"<":  LessThan,
+		"==": Equal,
+	}[s]
+	if !ok {
+		return fmt.Errorf("invalid operator %q", s)
+	}
+	*ss = got
+	return nil
+}
 
 func GreaterThan(a, b Value) bool {
 	aType, aValue := VtoFS(a)

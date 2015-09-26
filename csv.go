@@ -4,6 +4,8 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"os"
+	"path"
 	"reflect"
 	"strconv"
 	"strings"
@@ -24,6 +26,23 @@ func recordToData(attrs Schema, records [][]string) ([][]Value, error) {
 		}
 	}
 	return result, nil
+}
+
+func LoadCsv(filename string) (*Relation, error) {
+	f := fopen(filename)
+	defer f.Close()
+	original, err := NewCSVRelationalStream(f)
+	original.Name = path.Base(filename)
+	original.Name = strings.TrimRight(original.Name, path.Ext(original.Name))
+	return original, err
+}
+
+func fopen(fn string) *os.File {
+	f, err := os.Open(fn)
+	if err != nil {
+		panic(err)
+	}
+	return f
 }
 
 // CSVRelational
