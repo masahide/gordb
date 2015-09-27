@@ -10,7 +10,7 @@ import (
 	"github.com/k0kubun/pp"
 )
 
-var testStaff = Relation{
+var testStaff = &Relation{
 	Name:  "staff",
 	index: 0,
 	Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
@@ -21,7 +21,7 @@ var testStaff = Relation{
 	},
 }
 
-var testRank = Relation{
+var testRank = &Relation{
 	Name:  "rank",
 	index: 0,
 	Attrs: Schema{Attr{"name", reflect.String}, Attr{"rank", reflect.Int64}},
@@ -66,7 +66,7 @@ func TestGetRelation1(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if !reflect.DeepEqual(*r, testRank) {
+	if !reflect.DeepEqual(r, testRank) {
 		t.Errorf("Does not match %# v, want:%# v", r, testRank)
 	}
 }
@@ -77,7 +77,7 @@ func TestGetRelation2(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if !reflect.DeepEqual(*r, testStaff) {
+	if !reflect.DeepEqual(r, testStaff) {
 		t.Errorf("Does not match %# v, want:%# v", r, testStaff)
 	}
 }
@@ -88,7 +88,7 @@ func TestGetRelation3(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if !reflect.DeepEqual(*r, testStaff) {
+	if !reflect.DeepEqual(r, testStaff) {
 		t.Errorf("Does not match %# v, want:%# v", r, testStaff)
 	}
 }

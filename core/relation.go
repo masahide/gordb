@@ -25,6 +25,7 @@ func (r *Relation) Next() *Tuple {
 
 func (r *Relation) Copy() *Relation {
 	return &Relation{
+		Name:  r.Name,
 		Attrs: r.Attrs,
 		Data:  r.Data,
 	}
