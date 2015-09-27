@@ -14,23 +14,27 @@ type JoinStream struct {
 	currentTuple *Tuple
 }
 
-func (s *JoinStream) Next() *Tuple {
+func (s *JoinStream) Next() (result *Tuple, err error) {
 	if len(s.tuples) <= s.index {
 		s.index = 0
 		s.currentTuple = nil
 	}
 	if s.currentTuple == nil {
 		if s.Input1.HasNext() {
-			s.currentTuple = s.Input1.Next()
+			s.currentTuple, err = s.Input1.Next()
 		}
 		if s.currentTuple == nil {
-			return nil
+			return
 		}
 	}
 	targetTuple := s.tuples[s.index]
 	s.index++
-	if s.Selector(s.currentTuple.Get(s.Attr1), targetTuple.Get(s.Attr2)) {
-		result := NewTuple()
+	res, err := s.Selector(s.currentTuple.Get(s.Attr1), targetTuple.Get(s.Attr2))
+	if err != nil {
+		return
+	}
+	if res {
+		result = NewTuple()
 		s.currentTuple.Iterator(func(i int, f Attr, value Value) error {
 			result.Set(f, value)
 			return nil
@@ -39,19 +43,22 @@ func (s *JoinStream) Next() *Tuple {
 			result.Set(f, value)
 			return nil
 		})
-		return result
+		return
 	}
 	if s.HasNext() {
 		return s.Next()
-	} else {
-		return nil
 	}
+	return nil, nil
 }
 func (s *JoinStream) HasNext() bool {
 	if s.tuples == nil {
 		s.tuples = make([]*Tuple, 0, TupleCapacity)
 		for s.Input2.HasNext() {
-			s.tuples = append(s.tuples, s.Input2.Next())
+			next, err := s.Input2.Next()
+			if err != nil {
+				continue
+			}
+			s.tuples = append(s.tuples, next)
 		}
 	}
 	if len(s.tuples) > s.index {

@@ -14,7 +14,10 @@ func StreamToRelation(s Stream, n *Node) (*Relation, error) {
 	}
 	lastRow := NewTuple()
 	for s.HasNext() {
-		row := s.Next()
+		row, err := s.Next()
+		if err != nil {
+			return nil, err
+		}
 		if row == nil {
 			continue
 		}

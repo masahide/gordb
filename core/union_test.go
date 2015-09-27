@@ -42,7 +42,14 @@ func TestJsonUnionDecode(t *testing.T) {
 	if err := json.NewDecoder(strings.NewReader(jsonStream)).Decode(&m); err != nil {
 		log.Fatal(err)
 	}
-	result, _ := StreamToRelation(m, testData)
+	result, err := StreamToRelation(m, testData)
+	if err != nil {
+		t.Error(err)
+	}
+	if result == nil {
+		t.Error("result is nil")
+		return
+	}
 	if !reflect.DeepEqual(result.Data, want.Data) {
 		t.Errorf("Does not match result:%# v, want:%# v", result.Data, want.Data)
 	}

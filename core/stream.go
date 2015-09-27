@@ -48,7 +48,7 @@ func (s *Stream) getStream() stream {
 
 type stream interface {
 	Init(*Node) error
-	Next() *Tuple
+	Next() (*Tuple, error)
 	HasNext() bool
 	Close()
 }

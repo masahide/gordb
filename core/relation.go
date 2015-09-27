@@ -14,13 +14,13 @@ func (r *Relation) Close() {
 	r.index = 0
 }
 
-func (r *Relation) Next() *Tuple {
+func (r *Relation) Next() (*Tuple, error) {
 	tuple := NewTuple()
 	for i, attr := range r.Attrs {
 		tuple.Set(attr, r.Data[r.index][i])
 	}
 	r.index++
-	return tuple
+	return tuple, nil
 }
 
 func (r *Relation) Copy() *Relation {

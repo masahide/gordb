@@ -8,9 +8,12 @@ type RenameStream struct {
 	Name  string `json:"to"`
 }
 
-func (s *RenameStream) Next() *Tuple {
+func (s *RenameStream) Next() (*Tuple, error) {
 	result := NewTuple()
-	tuple := s.Input.Next()
+	tuple, err := s.Input.Next()
+	if err != nil {
+		return tuple, err
+	}
 	tuple.Iterator(func(i int, attr Attr, value Value) error {
 		if attr.Name == s.Attr {
 			result.Set(Attr{s.Name, attr.Kind}, value)
@@ -19,7 +22,7 @@ func (s *RenameStream) Next() *Tuple {
 		result.Set(attr, value)
 		return nil
 	})
-	return result
+	return result, err
 
 }
 func (s *RenameStream) HasNext() bool {
