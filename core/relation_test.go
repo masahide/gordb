@@ -32,8 +32,7 @@ var testRank = &Relation{
 	},
 }
 
-/*
-var testData = &Node{
+var testData1 = &Node{
 	Name:     "root",
 	FullPath: Relations{},
 	Nodes: Nodes{
@@ -64,16 +63,15 @@ var testData = &Node{
 		},
 	},
 }
-*/
 
-var testData = NewNode("root")
+var testData2 = NewNode("root")
 
 func init() {
-	err := testData.SetRelations("test", Relations{"staff1": testStaff, "rank1": testRank})
+	err := testData2.SetRelations("test", Relations{"staff1": testStaff, "rank1": testRank})
 	if err != nil {
 		log.Fatalln(err)
 	}
-	err = testData.SetRelations("20150926/data", Relations{"staff2": testStaff, "rank2": testRank})
+	err = testData2.SetRelations("20150926/data", Relations{"staff2": testStaff, "rank2": testRank})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -81,11 +79,11 @@ func init() {
 	testRank3.Name = "rank3"
 	testStaff3 = testStaff.Clone()
 	testStaff3.Name = "staff3"
-	err = testData.SetRelation("20150926", testRank3)
+	err = testData2.SetRelation("20150926", testRank3)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	err = testData.SetRelation("20150926", testStaff3)
+	err = testData2.SetRelation("20150926", testStaff3)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -93,7 +91,14 @@ func init() {
 
 func TestGetRelation1(t *testing.T) {
 
-	r, err := testData.GetRelation("/test/rank1")
+	r, err := testData1.GetRelation("/test/rank1")
+	if err != nil {
+		t.Error(err)
+	}
+	if !reflect.DeepEqual(r, testRank) {
+		t.Errorf("Does not match %# v, want:%# v", r, testRank)
+	}
+	r, err = testData2.GetRelation("/test/rank1")
 	if err != nil {
 		t.Error(err)
 	}
@@ -104,7 +109,14 @@ func TestGetRelation1(t *testing.T) {
 
 func TestGetRelation2(t *testing.T) {
 
-	r, err := testData.GetRelation("20150926/data/staff2")
+	r, err := testData1.GetRelation("20150926/data/staff2")
+	if err != nil {
+		t.Error(err)
+	}
+	if !reflect.DeepEqual(r, testStaff) {
+		t.Errorf("Does not match %# v, want:%# v", r, testStaff)
+	}
+	r, err = testData2.GetRelation("20150926/data/staff2")
 	if err != nil {
 		t.Error(err)
 	}
@@ -115,7 +127,7 @@ func TestGetRelation2(t *testing.T) {
 
 func TestGetRelation3(t *testing.T) {
 
-	r, err := testData.GetRelation("20150926/staff3")
+	r, err := testData2.GetRelation("20150926/staff3")
 	if err != nil {
 		t.Error(err)
 	}
@@ -141,7 +153,7 @@ func TestJsonSelectionStream(t *testing.T) {
 	if err := json.NewDecoder(strings.NewReader(jsonStream)).Decode(&m); err != nil {
 		log.Fatal(err)
 	}
-	result, _ := StreamToRelation(m, testData)
+	result, _ := StreamToRelation(m, testData2)
 	if !reflect.DeepEqual(result, want) {
 		t.Errorf("Does not match 'SELECT * FROM Staff WHERE age > 20'\nresult:% #v,\n want:% #v", result, want)
 	}
@@ -164,7 +176,7 @@ func TestJsonProjectionStream(t *testing.T) {
 	if err := json.NewDecoder(strings.NewReader(jsonStream)).Decode(&m); err != nil {
 		log.Fatal(err)
 	}
-	result, _ := StreamToRelation(m, testData)
+	result, _ := StreamToRelation(m, testData2)
 	if !reflect.DeepEqual(result, want) {
 		t.Errorf("Does not match 'SELECT age,job FROM Staff'\nresult:% #v,\n want:% #v", result, want)
 	}

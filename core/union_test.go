@@ -42,7 +42,7 @@ func TestJsonUnionDecode(t *testing.T) {
 	if err := json.NewDecoder(strings.NewReader(jsonStream)).Decode(&m); err != nil {
 		log.Fatal(err)
 	}
-	result, err := StreamToRelation(m, testData)
+	result, err := StreamToRelation(m, testData2)
 	if err != nil {
 		t.Error(err)
 	}

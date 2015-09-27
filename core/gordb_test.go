@@ -16,7 +16,7 @@ func TestRelationalStream_Staff(t *testing.T) {
 	}
 
 	original := &Relation{Name: "test/staff1"}
-	result, err := StreamToRelation(Stream{Relation: original}, testData)
+	result, err := StreamToRelation(Stream{Relation: original}, testData1)
 	if err != nil {
 		t.Error(err)
 	}
@@ -37,7 +37,7 @@ func TestRelationalStream_Rank(t *testing.T) {
 		},
 	}
 	original := &Relation{Name: "test/rank1"}
-	result, err := StreamToRelation(Stream{Relation: original}, testData)
+	result, err := StreamToRelation(Stream{Relation: original}, testData2)
 	if err != nil {
 		t.Error(err)
 	}
@@ -56,7 +56,7 @@ func TestSelectionStream(t *testing.T) {
 		},
 	}
 	stream2 := &SelectionStream{Stream{Relation: &Relation{Name: "test/staff1"}}, "age", GreaterThan, 20}
-	result, _ := StreamToRelation(Stream{Selection: stream2}, testData)
+	result, _ := StreamToRelation(Stream{Selection: stream2}, testData2)
 	if !reflect.DeepEqual(result, want) {
 		t.Errorf("Does not match 'SELECT * FROM Staff WHERE age > 20'\nresult:% #v,\n want:% #v", result, want)
 	}
@@ -73,7 +73,7 @@ func TestProjectionStream(t *testing.T) {
 		},
 	}
 	stream2 := &ProjectionStream{Stream{Relation: &Relation{Name: "test/staff1"}}, []string{"age", "job"}}
-	result, _ := StreamToRelation(Stream{Projection: stream2}, testData)
+	result, _ := StreamToRelation(Stream{Projection: stream2}, testData2)
 	if !reflect.DeepEqual(result, want) {
 		t.Errorf("Does not match 'SELECT age,job FROM Staff'\nresult:% #v,\n want:% #v", result, want)
 	}
@@ -96,7 +96,7 @@ func TestJoinStream(t *testing.T) {
 		Attr2:    "name",
 		Selector: Equal,
 	}
-	result, _ := StreamToRelation(Stream{Join: stream3}, testData)
+	result, _ := StreamToRelation(Stream{Join: stream3}, testData2)
 	if !reflect.DeepEqual(result, SELECT_FROM_Staff_Rank_WHERE_staff_name_rank_name) {
 		t.Errorf("Does not match 'SELECT * FROM Staff, Rank WHERE staff.name = rank.name' result:% #v", result)
 	}
@@ -121,7 +121,7 @@ func TestCrossJoinStream(t *testing.T) {
 	stream3 := &CrossJoinStream{
 		Input1: Stream{Relation: &Relation{Name: "test/staff1"}},
 		Input2: Stream{Rename: &RenameStream{Stream{Relation: &Relation{Name: "test/rank1"}}, "name", "name2"}}}
-	result, _ := StreamToRelation(Stream{CrossJoin: stream3}, testData)
+	result, _ := StreamToRelation(Stream{CrossJoin: stream3}, testData2)
 	if !reflect.DeepEqual(result, want) {
 		t.Errorf("Does not match 'SELECT * FROM Staff CROSS JOIN Rank' result:% #v", result)
 	}
@@ -148,7 +148,7 @@ func TestEmpty(t *testing.T) {
 			"age", GreaterThan, 100,
 		},
 	}
-	result, _ := StreamToRelation(stream, testData)
+	result, _ := StreamToRelation(stream, testData2)
 	if !reflect.DeepEqual(result, want) {
 		t.Errorf("Does not match 'SELECT * FROM Staff CROSS JOIN Rank where age > 100' result:% #v", result)
 	}
