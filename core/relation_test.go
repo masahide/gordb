@@ -6,8 +6,6 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/k0kubun/pp"
 )
 
 var testStaff = &Relation{
@@ -91,24 +89,6 @@ func TestGetRelation3(t *testing.T) {
 	if !reflect.DeepEqual(r, testStaff) {
 		t.Errorf("Does not match %# v, want:%# v", r, testStaff)
 	}
-}
-
-func _TestJsonDecode(t *testing.T) {
-	const jsonStream = `{
-		"selection": {
-			"input": { "union":{
-					"input1":{"relation": {"name": "test/staff1"}},
-					"input2":{"relation": {"name": "test/staff1"}}
-			}},
-			"attr": "name", "selector": ">", "arg": 20 
-		}
-	}`
-	m := Stream{}
-	if err := json.NewDecoder(strings.NewReader(jsonStream)).Decode(&m); err != nil {
-		log.Fatal(err)
-	}
-	pp.Print(m)
-
 }
 
 func TestJsonSelectionStream(t *testing.T) {
