@@ -30,20 +30,25 @@ var testRank = &Relation{
 	},
 }
 
+/*
 var testData = &Node{
-	Name: "root",
+	Name:     "root",
+	FullPath: Relations{},
 	Nodes: Nodes{
 		"test": &Node{
-			Name: "test",
+			FullPath: Relations{},
+			Name:     "test",
 			Relations: Relations{
 				"staff1": testStaff,
 				"rank1":  testRank,
 			},
 		},
 		"20150926": &Node{
+			FullPath: Relations{},
 			Nodes: Nodes{
 				"data": &Node{
-					Name: "data",
+					FullPath: Relations{},
+					Name:     "data",
 					Relations: Relations{
 						"staff2": testStaff,
 						"rank2":  testRank,
@@ -56,6 +61,24 @@ var testData = &Node{
 			},
 		},
 	},
+}
+*/
+
+var testData = NewNode("root")
+
+func init() {
+	err := testData.SetRelations("test", Relations{"staff1": testStaff, "rank1": testRank})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = testData.SetRelations("20150926/data", Relations{"staff2": testStaff, "rank2": testRank})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = testData.SetRelations("20150926", Relations{"staff3": testStaff, "rank3": testRank})
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
 
 func TestGetRelation1(t *testing.T) {
