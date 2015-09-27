@@ -76,8 +76,27 @@ func (n *Node) SetRelations(dir string, rels Relations) error {
 		return cn.SetRelations(path.Join(s[1:]...), rels)
 	}
 	for name, r := range rels {
-		n.Relations[path.Join(dir, name)] = r
+		n.Relations[name] = r
 	}
+	return nil
+
+}
+
+func (n *Node) SetRelation(dir string, rel *Relation) error {
+	dir = strings.TrimLeft(dir, "/")
+	s := strings.Split(dir, "/")
+	name := rel.Name
+	n.FullPath[path.Join(dir, name)] = rel
+	if s[0] != "" {
+		cdir := s[0]
+		cn, ok := n.Nodes[cdir]
+		if !ok {
+			cn = NewNode(cdir)
+			n.Nodes[cdir] = cn
+		}
+		return cn.SetRelation(path.Join(s[1:]...), rel)
+	}
+	n.Relations[name] = rel
 	return nil
 
 }

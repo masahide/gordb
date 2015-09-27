@@ -23,7 +23,7 @@ func (r *Relation) Next() (*Tuple, error) {
 	return tuple, nil
 }
 
-func (r *Relation) Copy() *Relation {
+func (r *Relation) Clone() *Relation {
 	return &Relation{
 		Name:  r.Name,
 		Attrs: r.Attrs,

@@ -18,6 +18,8 @@ var testStaff = &Relation{
 		[]Value{"佐藤", int64(21), "マネージャー"},
 	},
 }
+var testStaff3 *Relation
+var testRank3 *Relation
 
 var testRank = &Relation{
 	Name:  "rank",
@@ -75,7 +77,15 @@ func init() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	err = testData.SetRelations("20150926", Relations{"staff3": testStaff, "rank3": testRank})
+	testRank3 = testRank.Clone()
+	testRank3.Name = "rank3"
+	testStaff3 = testStaff.Clone()
+	testStaff3.Name = "staff3"
+	err = testData.SetRelation("20150926", testRank3)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = testData.SetRelation("20150926", testStaff3)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -109,8 +119,8 @@ func TestGetRelation3(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if !reflect.DeepEqual(r, testStaff) {
-		t.Errorf("Does not match %# v, want:%# v", r, testStaff)
+	if !reflect.DeepEqual(r, testStaff3) {
+		t.Errorf("Does not match %# v, want:%# v", r, testStaff3)
 	}
 }
 
