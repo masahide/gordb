@@ -17,7 +17,7 @@ func main() {
 	}
 	var testData = &core.Node{
 		Name:      "root",
-		Relations: core.Relations{"staff": *staff},
+		Relations: core.Relations{"staff": staff},
 	}
 	result, err := core.StreamToRelation(core.Stream{Relation: &core.Relation{Name: "staff"}}, testData)
 	pp.Print(result)
