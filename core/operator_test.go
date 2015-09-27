@@ -12,8 +12,46 @@ func TestTypeCheck(t *testing.T) {
 	}
 }
 
+func TestGreaterThan(t *testing.T) {
+	_, err := GreaterThan(Value([]string{""}), Value([]string{"hoge"}))
+	if err != ErrUnkownType {
+		t.Error("err != ErrUnkownType", err)
+	}
+	_, err = GreaterThan(Value("string"), Value(0))
+	if err != ErrDifferentType {
+		t.Error("err != ErrDifferentType")
+	}
+	ng, _ := GreaterThan(Value(0), Value(0))
+	if ng != (0 > 0) {
+		t.Error(" ng != (0 > 0)")
+	}
+	ng, _ = GreaterThan(Value(1), Value(0))
+	if ng != (1 > 0) {
+		t.Error(" ng != (1 > 0)")
+	}
+	ng, _ = GreaterThan(Value(0), Value(1))
+	if ng != (0 > 1) {
+		t.Error(" ng != (0 > 1)")
+	}
+	ng, _ = GreaterThan(Value("hoge"), Value("hoge"))
+	if ng != ("hoge" > "hoge") {
+		t.Error("ng != (\"hoge\" > \"hoge\")")
+	}
+	ng, _ = GreaterThan(Value("hoge"), Value("fuga"))
+	if ng != ("hoge" > "fuga") {
+		t.Error("ng != (\"hoge\" > \"fuga\")")
+	}
+	ng, _ = GreaterThan(Value("fuga"), Value("hoge"))
+	if ng != ("fuga" > "hoge") {
+		t.Error("ng != (\"fuga\" > \"hoge\")")
+	}
+}
 func TestNotGreaterThan(t *testing.T) {
-	_, err := NotGreaterThan(Value("string"), Value(0))
+	_, err := NotGreaterThan(Value([]string{"string"}), Value([]string{"hoge"}))
+	if err != ErrUnkownType {
+		t.Error("err != ErrUnkownType")
+	}
+	_, err = NotGreaterThan(Value("string"), Value(0))
 	if err != ErrDifferentType {
 		t.Error("err != ErrDifferentType")
 	}
@@ -43,8 +81,47 @@ func TestNotGreaterThan(t *testing.T) {
 	}
 }
 
+func TestLessThan(t *testing.T) {
+	_, err := LessThan(Value([]string{""}), Value([]string{"hoge"}))
+	if err != ErrUnkownType {
+		t.Error("err != ErrUnkownType")
+	}
+	_, err = LessThan(Value("string"), Value(0))
+	if err != ErrDifferentType {
+		t.Error("err != ErrDifferentType")
+	}
+	ng, _ := LessThan(Value(0), Value(0))
+	if ng != (0 < 0) {
+		t.Error(" ng != (0 < 0)")
+	}
+	ng, _ = LessThan(Value(1), Value(0))
+	if ng != (1 < 0) {
+		t.Error(" ng != (1 < 0)")
+	}
+	ng, _ = LessThan(Value(0), Value(1))
+	if ng != (0 < 1) {
+		t.Error(" ng != (0 < 1)")
+	}
+	ng, _ = LessThan(Value("hoge"), Value("hoge"))
+	if ng != ("hoge" < "hoge") {
+		t.Error("ng != (\"hoge\" < \"hoge\")")
+	}
+	ng, _ = LessThan(Value("hoge"), Value("fuga"))
+	if ng != ("hoge" < "fuga") {
+		t.Error("ng != (\"hoge\" < \"fuga\")")
+	}
+	ng, _ = LessThan(Value("fuga"), Value("hoge"))
+	if ng != ("fuga" < "hoge") {
+		t.Error("ng != (\"fuga\" < \"hoge\")")
+	}
+}
+
 func TestNotLessThan(t *testing.T) {
-	_, err := NotLessThan(Value("string"), Value(0))
+	_, err := NotLessThan(Value([]string{""}), Value([]string{"hoge"}))
+	if err != ErrUnkownType {
+		t.Error("err != ErrUnkownType")
+	}
+	_, err = NotLessThan(Value("string"), Value(0))
 	if err != ErrDifferentType {
 		t.Error("err != ErrDifferentType")
 	}
@@ -75,7 +152,11 @@ func TestNotLessThan(t *testing.T) {
 }
 
 func TestEqual(t *testing.T) {
-	_, err := Equal(Value("string"), Value(0))
+	_, err := Equal(Value([]string{""}), Value([]string{"hoge"}))
+	if err != ErrUnkownType {
+		t.Error("err != ErrUnkownType")
+	}
+	_, err = Equal(Value("string"), Value(0))
 	if err != ErrDifferentType {
 		t.Error("err != ErrDifferentType")
 	}
@@ -106,7 +187,11 @@ func TestEqual(t *testing.T) {
 }
 
 func TestNotEqual(t *testing.T) {
-	_, err := NotEqual(Value("string"), Value(0))
+	_, err := NotEqual(Value([]string{""}), Value([]string{"hoge"}))
+	if err != ErrUnkownType {
+		t.Error("err != ErrUnkownType")
+	}
+	_, err = NotEqual(Value("string"), Value(0))
 	if err != ErrDifferentType {
 		t.Error("err != ErrDifferentType")
 	}
