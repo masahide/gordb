@@ -11,17 +11,18 @@ type CrossJoinStream struct {
 	currentTuple *Tuple
 }
 
-func (s *CrossJoinStream) Next() *Tuple {
+func (s *CrossJoinStream) Next() (*Tuple, error) {
+	var err error
 	if len(s.tuples) <= s.index {
 		s.index = 0
 		s.currentTuple = nil
 	}
 	if s.currentTuple == nil {
 		if s.Input1.HasNext() {
-			s.currentTuple = s.Input1.Next()
+			s.currentTuple, err = s.Input1.Next()
 		}
-		if s.currentTuple == nil {
-			return nil
+		if s.currentTuple == nil || err != nil {
+			return nil, err
 		}
 	}
 	targetTuple := s.tuples[s.index]
@@ -35,13 +36,17 @@ func (s *CrossJoinStream) Next() *Tuple {
 		result.Set(f, value)
 		return nil
 	})
-	return result
+	return result, nil
 }
 func (s *CrossJoinStream) HasNext() bool {
 	if s.tuples == nil {
 		s.tuples = make([]*Tuple, 0, TupleCapacity)
 		for s.Input2.HasNext() {
-			s.tuples = append(s.tuples, s.Input2.Next())
+			next, err := s.Input2.Next()
+			if err != nil {
+				continue
+			}
+			s.tuples = append(s.tuples, next)
 		}
 	}
 	if len(s.tuples) > s.index {

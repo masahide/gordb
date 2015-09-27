@@ -7,14 +7,14 @@ type UnionStream struct {
 	Input2 Stream `json:"input2"`
 }
 
-func (s *UnionStream) Next() *Tuple {
+func (s *UnionStream) Next() (*Tuple, error) {
 	switch {
 	case s.Input1.HasNext():
 		return s.Input1.Next()
 	case s.Input2.HasNext():
 		return s.Input2.Next()
 	}
-	return nil
+	return nil, nil
 }
 func (s *UnionStream) HasNext() bool {
 	switch {

@@ -9,15 +9,22 @@ type SelectionStream struct {
 	Arg      Value    `json:"arg"`
 }
 
-func (s *SelectionStream) Next() *Tuple {
-	tuple := s.Input.Next()
-	if s.Selector(tuple.Get(s.Attr), s.Arg) {
-		return tuple
+func (s *SelectionStream) Next() (*Tuple, error) {
+	tuple, err := s.Input.Next()
+	if err != nil {
+		return nil, err
+	}
+	result, err := s.Selector(tuple.Get(s.Attr), s.Arg)
+	if err != nil {
+		return nil, err
+	}
+	if result {
+		return tuple, nil
 	}
 	if s.Input.HasNext() {
 		return s.Next()
 	}
-	return nil
+	return nil, nil
 }
 func (s *SelectionStream) HasNext() bool {
 	return s.Input.HasNext()

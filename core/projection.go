@@ -7,13 +7,16 @@ type ProjectionStream struct {
 	Attrs []string `json:"attrs"`
 }
 
-func (s *ProjectionStream) Next() *Tuple {
-	tuple := s.Input.Next()
-	result := NewTuple()
+func (s *ProjectionStream) Next() (result *Tuple, err error) {
+	var tuple *Tuple
+	if tuple, err = s.Input.Next(); err != nil {
+		return
+	}
+	result = NewTuple()
 	for _, Attr := range s.Attrs {
 		result.Set(tuple.GetAttr(Attr), tuple.Get(Attr))
 	}
-	return result
+	return
 }
 func (s *ProjectionStream) HasNext() bool {
 	return s.Input.HasNext()
