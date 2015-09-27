@@ -18,6 +18,8 @@ var testStaff = &Relation{
 		[]Value{"佐藤", int64(21), "マネージャー"},
 	},
 }
+var testStaff3 *Relation
+var testRank3 *Relation
 
 var testRank = &Relation{
 	Name:  "rank",
@@ -30,20 +32,25 @@ var testRank = &Relation{
 	},
 }
 
+/*
 var testData = &Node{
-	Name: "root",
+	Name:     "root",
+	FullPath: Relations{},
 	Nodes: Nodes{
 		"test": &Node{
-			Name: "test",
+			FullPath: Relations{},
+			Name:     "test",
 			Relations: Relations{
 				"staff1": testStaff,
 				"rank1":  testRank,
 			},
 		},
 		"20150926": &Node{
+			FullPath: Relations{},
 			Nodes: Nodes{
 				"data": &Node{
-					Name: "data",
+					FullPath: Relations{},
+					Name:     "data",
 					Relations: Relations{
 						"staff2": testStaff,
 						"rank2":  testRank,
@@ -56,6 +63,32 @@ var testData = &Node{
 			},
 		},
 	},
+}
+*/
+
+var testData = NewNode("root")
+
+func init() {
+	err := testData.SetRelations("test", Relations{"staff1": testStaff, "rank1": testRank})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = testData.SetRelations("20150926/data", Relations{"staff2": testStaff, "rank2": testRank})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	testRank3 = testRank.Clone()
+	testRank3.Name = "rank3"
+	testStaff3 = testStaff.Clone()
+	testStaff3.Name = "staff3"
+	err = testData.SetRelation("20150926", testRank3)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = testData.SetRelation("20150926", testStaff3)
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
 
 func TestGetRelation1(t *testing.T) {
@@ -86,8 +119,8 @@ func TestGetRelation3(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if !reflect.DeepEqual(r, testStaff) {
-		t.Errorf("Does not match %# v, want:%# v", r, testStaff)
+	if !reflect.DeepEqual(r, testStaff3) {
+		t.Errorf("Does not match %# v, want:%# v", r, testStaff3)
 	}
 }
 

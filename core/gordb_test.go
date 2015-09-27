@@ -6,7 +6,7 @@ import (
 )
 
 func TestRelationalStream_Staff(t *testing.T) {
-	var SELECT_FROM_Staff = &Relation{
+	var want = &Relation{
 		Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
 		Data: [][]Value{
 			[]Value{"清水", int64(17), "エンジニア"},
@@ -20,8 +20,8 @@ func TestRelationalStream_Staff(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if !reflect.DeepEqual(result.Data, SELECT_FROM_Staff.Data) {
-		t.Errorf("Does not match 'SELECT * FROM Staff' original:%# v, want:%# v", result.Data, SELECT_FROM_Staff.Data)
+	if !reflect.DeepEqual(result.Data, want.Data) {
+		t.Errorf("Does not match 'SELECT * FROM Staff' original:%# v, want:%# v", result.Data, want.Data)
 	}
 }
 
