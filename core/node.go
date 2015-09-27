@@ -12,7 +12,7 @@ type Node struct {
 	Relations
 }
 
-type Relations map[string]Relation
+type Relations map[string]*Relation
 type Nodes map[string]*Node
 
 func (n *Node) GetRelation(fullPath string) (*Relation, error) {
@@ -24,7 +24,7 @@ func (n *Node) GetRelation(fullPath string) (*Relation, error) {
 		if !ok {
 			return nil, fmt.Errorf("dir not found:%s fullPath:%s", base, fullPath)
 		}
-		return &r, nil
+		return r, nil
 	}
 
 	s := strings.Split(strings.TrimLeft(dir, "/"), "/")
