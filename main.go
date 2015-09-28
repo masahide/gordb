@@ -2,7 +2,9 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
+	"strings"
 
 	"github.com/k0kubun/pp"
 	"github.com/masahide/gordb/core"
@@ -11,14 +13,29 @@ import (
 
 func main() {
 
-	staff, err := csv.LoadCsv("test/staff.csv")
+	node, err := csv.Crawler("test")
 	if err != nil {
 		log.Fatalln(err)
 	}
-	var testData = &core.Node{
-		Name:      "root",
-		Relations: core.Relations{"staff": staff},
+	const jsonStream = `{ 
+		"union": {
+			"input1": {"selection": {
+				"input": { "relation": { "name": "dir1/staff2" } },
+				"attr": "age",  "selector": ">=", "arg": 31
+			}},
+			"input2": {"selection": {
+				"input": { "relation": { "name": "dir1/staff2" } },
+				"attr": "name", "selector": "==", "arg": "山田"
+			}}
+		}
+	}`
+	m := core.Stream{}
+	if err := json.NewDecoder(strings.NewReader(jsonStream)).Decode(&m); err != nil {
+		log.Fatal(err)
 	}
-	result, err := core.StreamToRelation(core.Stream{Relation: &core.Relation{Name: "staff"}}, testData)
+	result, err := core.StreamToRelation(m, node)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	pp.Print(result)
 }
