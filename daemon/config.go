@@ -1,19 +1,32 @@
 package daemon
 
+import (
+	"fmt"
+	"io/ioutil"
+	"log"
+
+	"github.com/BurntSushi/toml"
+)
+
 type Config struct {
 	Listen        string
 	ManageListen  string
 	WorkerLimit   int
-	BufferDefault int
 	WorkerDefault int
+	LoadDir       string
 }
 
-var (
-	defaultConfig = Config{
-		Listen:        ":3050",
-		ManageListen:  ":9089",
-		WorkerLimit:   5000,
-		WorkerDefault: 100,
-		BufferDefault: 90000,
+func LoadConfig(filename string) (Config, error) {
+	c := Config{}
+	b, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return c, fmt.Errorf("LoadConfig err: %s", err)
 	}
-)
+	log.Printf("load config: \n%s\n", b)
+	_, err = toml.Decode(string(b), &c)
+	if err != nil {
+		return c, fmt.Errorf("LoadConfig err: %s", err)
+	}
+	//log.Printf("Undecoded keys: %q\n", md.Undecoded())
+	return c, nil
+}

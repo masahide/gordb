@@ -1,10 +1,13 @@
 package daemon
 
 import (
-	"fmt"
 	"log"
+	"net/http"
+	"path"
+	"time"
 
 	"github.com/masahide/gordb/core"
+	"github.com/masahide/gordb/input/csv"
 	"golang.org/x/net/context"
 )
 
@@ -25,40 +28,69 @@ type Daemon struct {
 	Queue       chan Request
 	PoolCounter chan bool
 	MaxWorker   chan int
-	MaxBuffer   chan int
 	MngQ        []chan ManageRequest
 }
 
-func (d *Daemon) Worker(ctx context.Context, ManageCh chan ManageRequest) error {
-	node := core.NewNode("root")
-	for {
-		select {
-		case req := <-d.Queue:
-			res := d.work(req, node)
-			req.ResCh <- res
-			if res.Err != nil {
-				log.Printf("work err: %s", res.Err)
-			}
-		case req := <-ManageCh:
-			res := d.manageWork(req, node)
-			req.ResCh <- res
-			if res.Err != nil {
-				log.Printf("manageWork err: %s", res.Err)
-			}
-
-		case <-ctx.Done():
-			return ctx.Err()
-		}
+func NewDaemon(conf Config) *Daemon {
+	return &Daemon{
+		Config: conf,
+		Queue:  make(chan Request, conf.WorkerLimit),
+		MngQ:   make([]chan ManageRequest, conf.WorkerLimit),
 	}
 }
 
-func (d *Daemon) work(req Request, node *core.Node) Response {
-	res := Response{}
-	n, ok := node.Nodes[req.Path]
-	if !ok {
-		res.Err = fmt.Errorf("request.Path not found: %s", req.Path)
-		return res
+func (d *Daemon) Serve(ctx context.Context) error {
+
+	for i := 0; i < d.WorkerLimit; i++ {
+		d.MngQ[i] = make(chan ManageRequest, 1)
+		go d.Worker(ctx, d.MngQ[i])
 	}
-	res.Result, res.Err = core.StreamToRelation(req.Query, n)
-	return res
+
+	names, err := csv.SearchDir(d.LoadDir)
+	if err != nil {
+		return err
+	}
+	for _, name := range names {
+		dir := path.Join(d.LoadDir, name)
+		node, err := csv.Crawler(dir)
+		if err != nil {
+			return err
+		}
+		err = d.BroadcastManageReq(ManageRequest{Cmd: PutNode, Path: name, Name: name, Node: node})
+		if err != nil {
+			return err
+		}
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/query", d.Handler) // ハンドラを登録してウェブページを表示させる
+	s := &http.Server{
+		Addr:           d.Listen,
+		Handler:        mux,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+	log.Printf("listen: %s", d.Listen)
+	err = s.ListenAndServe()
+	if err != nil {
+		log.Printf("ListenAndServe err:%s", err)
+	}
+	return err
+}
+
+func (d *Daemon) UtilServe() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", d.ManageHandler)
+	s := &http.Server{
+		Addr:           d.ManageListen,
+		Handler:        mux,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+	log.Printf("Managelisten: %s", d.ManageListen)
+	err := s.ListenAndServe()
+	if err != nil {
+		log.Printf("ListenAndServe err:%s", err)
+	}
 }

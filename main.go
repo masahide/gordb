@@ -1,41 +1,41 @@
-// example
 package main
 
 import (
-	"encoding/json"
+	"flag"
+	"fmt"
 	"log"
-	"strings"
+	"os"
+	"path/filepath"
+	"runtime"
 
-	"github.com/k0kubun/pp"
-	"github.com/masahide/gordb/core"
-	"github.com/masahide/gordb/input/csv"
+	"golang.org/x/net/context"
+
+	"github.com/masahide/gordb/daemon"
 )
 
-func main() {
+var version = ""
 
-	node, err := csv.Crawler("test")
+func main() {
+	var (
+		ShowVersion bool
+		ctx         context.Context
+		cancel      context.CancelFunc
+	)
+	ctx, cancel = context.WithCancel(context.Background())
+	flag.BoolVar(&ShowVersion, "version", ShowVersion, "show version")
+	flag.Parse()
+	if ShowVersion {
+		fmt.Printf("version: %s\n", version)
+		os.Exit(0)
+	}
+	cpus := runtime.NumCPU()
+	runtime.GOMAXPROCS(cpus)
+	config, err := daemon.LoadConfig(filepath.Base(os.Args[0]) + ".toml")
 	if err != nil {
 		log.Fatalln(err)
 	}
-	const jsonStream = `{ 
-		"union": {
-			"input1": {"selection": {
-				"input": { "relation": { "name": "dir1/staff2" } },
-				"attr": "age",  "selector": ">=", "arg": 31
-			}},
-			"input2": {"selection": {
-				"input": { "relation": { "name": "dir1/staff2" } },
-				"attr": "name", "selector": "==", "arg": "山田"
-			}}
-		}
-	}`
-	m := core.Stream{}
-	if err := json.NewDecoder(strings.NewReader(jsonStream)).Decode(&m); err != nil {
-		log.Fatal(err)
-	}
-	result, err := core.StreamToRelation(m, node)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	pp.Print(result)
+	daemon := daemon.NewDaemon(config)
+	go daemon.UtilServe()
+	daemon.Serve(ctx)
+	cancel()
 }

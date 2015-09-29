@@ -1,0 +1,105 @@
+package daemon
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"path"
+	"strings"
+	"time"
+
+	"github.com/masahide/gordb/core"
+	"golang.org/x/net/context"
+)
+
+func (d *Daemon) Handler(w http.ResponseWriter, r *http.Request) {
+	t := time.Now()
+	name := r.PostForm.Get("name")
+	if name != "" {
+		name = strings.TrimRight(path.Base(r.URL.Path), "/")
+	}
+	defer r.Body.Close()
+	if r.Method != "POST" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	res := d.sendManageReq(ManageRequest{Cmd: GetNodeList, Path: r.URL.Path, Name: name})
+	if res.Err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(res.Err)
+		return
+	}
+	var streams []core.Stream
+	dec := json.NewDecoder(r.Body)
+	err := dec.Decode(&streams)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(err)
+		return
+	}
+	relations, err := d.QueryStreams(name, streams)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(err)
+		return
+	}
+	json.NewEncoder(w).Encode(relations)
+	elapsed := t.Sub(time.Now())
+	log.Printf("query elapsed:%s", elapsed)
+	return
+
+}
+
+func (d *Daemon) QueryStreams(name string, streams []core.Stream) (res []*core.Relation, err error) {
+	result := make([]*core.Relation, len(streams))
+	resChs := make([]chan Response, len(streams))
+	for i, stream := range streams {
+		resChs[i] = make(chan Response, 1)
+		d.Queue <- Request{Query: stream, Path: name, ResCh: resChs[i]}
+	}
+	for i := 0; i < len(streams); i++ {
+		res := <-resChs[i]
+		if res.Err != nil {
+			return nil, res.Err
+		}
+		result[i] = res.Result
+	}
+	return result, nil
+
+}
+
+func (d *Daemon) Worker(ctx context.Context, ManageCh chan ManageRequest) {
+	node := core.NewNode("root")
+	for {
+		select {
+		case req := <-d.Queue:
+			res := d.work(req, node)
+			req.ResCh <- res
+			if res.Err != nil {
+				log.Printf("work err: %s", res.Err)
+			}
+		case req := <-ManageCh:
+			res := d.manageWork(req, node)
+			req.ResCh <- res
+			if res.Err != nil {
+				log.Printf("manageWork err: %s", res.Err)
+			}
+
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (d *Daemon) work(req Request, node *core.Node) Response {
+	res := Response{}
+	n, ok := node.Nodes[req.Path]
+	if !ok {
+		res.Err = fmt.Errorf("request.Path not found: %s", req.Path)
+		return res
+	}
+	res.Result, res.Err = core.StreamToRelation(req.Query, n)
+	return res
+}

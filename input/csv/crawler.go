@@ -1,6 +1,8 @@
 package csv
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -31,4 +33,25 @@ func Crawler(root string) (*core.Node, error) {
 		return nil
 	})
 	return node, err
+}
+
+func SearchDir(dir string) ([]string, error) {
+	dirs := make([]string, 0, 10)
+	fi, err := os.Stat(dir)
+	if err != nil {
+		return nil, err
+	}
+	if !fi.IsDir() {
+		return nil, fmt.Errorf("not dir: %s", dir)
+	}
+	fis, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	for _, finfo := range fis {
+		if finfo.IsDir() {
+			dirs = append(dirs, finfo.Name())
+		}
+	}
+	return dirs, nil
 }

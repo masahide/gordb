@@ -1,0 +1,9 @@
+##
+##
+
+Listen        =  ":3050"
+ManageListen  =  ":9089"
+WorkerLimit   =  100
+WorkerDefault =  100
+LoadDir       =  "test"
+
