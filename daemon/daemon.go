@@ -13,7 +13,7 @@ import (
 
 type Request struct {
 	Query core.Stream
-	Path  string
+	Name  string
 	ResCh chan Response
 }
 
@@ -62,7 +62,7 @@ func (d *Daemon) Serve(ctx context.Context) error {
 		}
 	}
 	mux := http.NewServeMux()
-	mux.HandleFunc("/query", d.Handler) // ハンドラを登録してウェブページを表示させる
+	mux.HandleFunc("/query/", d.Handler)
 	s := &http.Server{
 		Addr:           d.Listen,
 		Handler:        mux,

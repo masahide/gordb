@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/k0kubun/pp"
 	"github.com/masahide/gordb/core"
 	"golang.org/x/net/context"
 )
@@ -16,7 +17,7 @@ import (
 func (d *Daemon) Handler(w http.ResponseWriter, r *http.Request) {
 	t := time.Now()
 	name := r.PostForm.Get("name")
-	if name != "" {
+	if name == "" {
 		name = strings.TrimRight(path.Base(r.URL.Path), "/")
 	}
 	defer r.Body.Close()
@@ -24,25 +25,18 @@ func (d *Daemon) Handler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	res := d.sendManageReq(ManageRequest{Cmd: GetNodeList, Path: r.URL.Path, Name: name})
-	if res.Err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(res.Err)
-		return
-	}
 	var streams []core.Stream
 	dec := json.NewDecoder(r.Body)
 	err := dec.Decode(&streams)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(err)
+		json.NewEncoder(w).Encode(fmt.Sprintf("json.Decode err:%s", err))
 		return
 	}
 	relations, err := d.QueryStreams(name, streams)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(err)
+		json.NewEncoder(w).Encode(err.Error)
 		return
 	}
 	json.NewEncoder(w).Encode(relations)
@@ -57,7 +51,7 @@ func (d *Daemon) QueryStreams(name string, streams []core.Stream) (res []*core.R
 	resChs := make([]chan Response, len(streams))
 	for i, stream := range streams {
 		resChs[i] = make(chan Response, 1)
-		d.Queue <- Request{Query: stream, Path: name, ResCh: resChs[i]}
+		d.Queue <- Request{Query: stream, Name: name, ResCh: resChs[i]}
 	}
 	for i := 0; i < len(streams); i++ {
 		res := <-resChs[i]
@@ -95,11 +89,12 @@ func (d *Daemon) Worker(ctx context.Context, ManageCh chan ManageRequest) {
 
 func (d *Daemon) work(req Request, node *core.Node) Response {
 	res := Response{}
-	n, ok := node.Nodes[req.Path]
+	n, ok := node.Nodes[req.Name]
 	if !ok {
-		res.Err = fmt.Errorf("request.Path not found: %s", req.Path)
+		res.Err = fmt.Errorf("request.Name not found: %s", req.Name)
 		return res
 	}
+	pp.Print(n)
 	res.Result, res.Err = core.StreamToRelation(req.Query, n)
 	return res
 }
