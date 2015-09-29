@@ -14,7 +14,7 @@ import (
 )
 
 func (d *Daemon) Handler(w http.ResponseWriter, r *http.Request) {
-	t := time.Now()
+	startTime := time.Now()
 	name := r.PostForm.Get("name")
 	if name == "" {
 		name = strings.TrimRight(path.Base(r.URL.Path), "/")
@@ -32,15 +32,17 @@ func (d *Daemon) Handler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(fmt.Sprintf("json.Decode err:%s", err))
 		return
 	}
+	elapsendJsonDecode := time.Now().Sub(startTime)
 	relations, err := d.QueryStreams(name, streams)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(err.Error)
 		return
 	}
+	elapsendQuery := time.Now().Sub(startTime) - elapsendJsonDecode
 	json.NewEncoder(w).Encode(relations)
-	elapsed := time.Now().Sub(t)
-	log.Printf("query elapsed:%s", elapsed)
+	elapsedAll := time.Now().Sub(startTime)
+	log.Printf("elapsed:%s, json decode:%s, query:%s, json encode:%s", elapsedAll, elapsendJsonDecode, elapsendQuery, elapsedAll-elapsendQuery-elapsendJsonDecode)
 	return
 
 }
