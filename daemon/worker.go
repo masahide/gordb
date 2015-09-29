@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/k0kubun/pp"
 	"github.com/masahide/gordb/core"
 	"golang.org/x/net/context"
 )
@@ -40,7 +39,7 @@ func (d *Daemon) Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(relations)
-	elapsed := t.Sub(time.Now())
+	elapsed := time.Now().Sub(t)
 	log.Printf("query elapsed:%s", elapsed)
 	return
 
@@ -94,7 +93,6 @@ func (d *Daemon) work(req Request, node *core.Node) Response {
 		res.Err = fmt.Errorf("request.Name not found: %s", req.Name)
 		return res
 	}
-	pp.Print(n)
 	res.Result, res.Err = core.StreamToRelation(req.Query, n)
 	return res
 }

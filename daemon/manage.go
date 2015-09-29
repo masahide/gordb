@@ -106,7 +106,7 @@ func (d *Daemon) manageWork(req ManageRequest, node *core.Node) ManageResponse {
 	res := ManageResponse{}
 	switch req.Cmd {
 	case PutNode:
-		node.Nodes[req.Name] = node
+		node.Nodes[req.Name] = req.Node
 		return res
 	case DelNode:
 		_, ok := node.Nodes[req.Name]

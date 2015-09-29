@@ -56,6 +56,7 @@ func (d *Daemon) Serve(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		log.Printf("load dir:%s", dir)
 		err = d.BroadcastManageReq(ManageRequest{Cmd: PutNode, Path: name, Name: name, Node: node})
 		if err != nil {
 			return err
