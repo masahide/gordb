@@ -8,6 +8,9 @@ import (
 )
 
 func TestCsvCrawler(t *testing.T) {
+	if _, err := Crawler("hoge"); err == nil {
+		t.Error(err)
+	}
 	var want = &core.Relation{
 		Name:  "rank",
 		Attrs: core.Schema{core.Attr{"name", reflect.String}, core.Attr{"rank", reflect.Int64}},
@@ -29,4 +32,22 @@ func TestCsvCrawler(t *testing.T) {
 	if !reflect.DeepEqual(staff2.Data, want.Data) {
 		t.Errorf("Does not match staff2:%# v, want:%# v", staff2.Data, want.Data)
 	}
+}
+
+func TestSearchDir(t *testing.T) {
+	want := []string{"dir1", "dir2"}
+	dirs, err := SearchDir("../../test")
+	if err != nil {
+		t.Error(err)
+	}
+	if _, err := SearchDir("../../test/rank2"); err == nil {
+		t.Error(err)
+	}
+	if _, err := SearchDir("hoge"); err == nil {
+		t.Error(err)
+	}
+	if !reflect.DeepEqual(dirs, want) {
+		t.Errorf("Does not match dirs:%#v, want:%#v", dirs, want)
+	}
+
 }
