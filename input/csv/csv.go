@@ -13,16 +13,22 @@ import (
 	"github.com/masahide/gordb/core"
 )
 
-const inferenceRowSize = 4
+const inferenceRowSize = 10000
 
 func recordToData(attrs core.Schema, records [][]string) ([][]core.Value, error) {
 	result := make([][]core.Value, len(records))
 	for i, row := range records {
 		result[i] = make([]core.Value, len(row))
 		for j, v := range row {
-			kind, value := inferenceType(v)
-			if kind != attrs[j].Kind {
-				return nil, fmt.Errorf("Type is different. line:%d,col:%d value:%v(type:%s), want:%s", i+2, j+1, v, kind, attrs[j].Kind)
+			_, value := inferenceType(v)
+			/*
+				if kind != attrs[j].Kind {
+					return nil, fmt.Errorf("Type is different. line:%d,col:%d value:%v(type:%s), want:%s", i+2, j+1, v, kind, attrs[j].Kind)
+				}
+			*/
+			if attrs[j].Kind == reflect.String {
+				result[i][j] = v
+				continue
 			}
 			result[i][j] = value
 		}
@@ -34,6 +40,9 @@ func LoadCsv(filename string) (*core.Relation, error) {
 	f := fopen(filename)
 	defer f.Close()
 	original, err := NewCSVRelationalStream(f)
+	if err != nil {
+		return nil, err
+	}
 	original.Name = path.Base(filename)
 	original.Name = strings.TrimRight(original.Name, path.Ext(original.Name))
 	return original, err
@@ -101,7 +110,8 @@ func typeInference(r io.ReadSeeker) (core.Schema, error) {
 				continue
 			}
 			if s[i].Kind == reflect.String && kind != reflect.String {
-				return s, fmt.Errorf("inference type detect error. Kind:%s->%s", s[i].Kind, kind)
+				//return s, fmt.Errorf("inference type detect error. Kind:%s->%s", s[i].Kind, kind)
+				s[i].Kind = kind // Promotion to string
 				continue
 			}
 
@@ -111,6 +121,9 @@ func typeInference(r io.ReadSeeker) (core.Schema, error) {
 }
 
 func inferenceType(s string) (reflect.Kind, interface{}) {
+	if s == "" {
+		return reflect.Invalid, ""
+	}
 	if i, err := strconv.ParseInt(s, 10, 0); err == nil {
 		return reflect.Int64, i
 	}

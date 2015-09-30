@@ -36,6 +36,8 @@ func main() {
 	}
 	daemon := daemon.NewDaemon(config)
 	go daemon.UtilServe()
-	daemon.Serve(ctx)
+	if err := daemon.Serve(ctx); err != nil {
+		log.Fatalln(err)
+	}
 	cancel()
 }
