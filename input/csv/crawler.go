@@ -24,7 +24,7 @@ func Crawler(root string) (*core.Node, error) {
 		if !f.IsDir() && strings.ToLower(filepath.Ext(objectPath)) == CsvExt {
 			rel, err := LoadCsv(objectPath)
 			if err != nil {
-				return err
+				return fmt.Errorf("LoadCsv file:%s err:%s", objectPath, err)
 			}
 			rPath := path.Dir(strings.TrimPrefix(objectPath, root))
 			rel.Name = strings.TrimSuffix(path.Base(objectPath), filepath.Ext(objectPath))
