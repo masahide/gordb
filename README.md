@@ -3,6 +3,13 @@ gordb
 
 [![Circle CI](https://circleci.com/gh/masahide/gordb.svg?style=svg)](https://circleci.com/gh/masahide/gordb) [![Build Status](https://drone.io/github.com/masahide/gordb/status.png)](https://drone.io/github.com/masahide/gordb/latest) [![Coverage Status](https://coveralls.io/repos/masahide/gordb/badge.svg?branch=master&service=github)](https://coveralls.io/github/masahide/gordb?branch=master)
 
+
+### Make
+
+```
+go build -ldflags "-X main.version $(git describe)"
+```
+
 ### Usage
 
 ```
