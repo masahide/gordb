@@ -1,15 +1,22 @@
 package status
 
-import "runtime"
+import (
+	"runtime"
+	"time"
+)
 
 type Status struct {
+	Time time.Time
 	// see: https://golang.org/pkg/runtime/#MemStats
 	runtime.MemStats
 	NumGoroutine int
 }
 
-func GetStatus() Status {
-	s := Status{}
+func Get() Status {
+	s := Status{
+		Time:         time.Now(),
+		NumGoroutine: runtime.NumGoroutine(),
+	}
 	runtime.ReadMemStats(&s.MemStats)
 	return s
 }

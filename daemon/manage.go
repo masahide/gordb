@@ -11,6 +11,7 @@ import (
 
 	"github.com/masahide/gordb/core"
 	"github.com/masahide/gordb/input/csv"
+	"github.com/masahide/gordb/status"
 )
 
 type ManageCmd uint
@@ -48,20 +49,17 @@ func (d *Daemon) ManageHandler(w http.ResponseWriter, r *http.Request) {
 			err = fmt.Errorf("csv.Crawler err: %s", err)
 			fmt.Fprintln(w, err)
 			log.Println(err)
-			return
 		}
 		err = d.BroadcastManageReq(ManageRequest{Cmd: PutNode, Path: r.URL.Path, Name: name, Node: node})
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintln(w, err)
-			return
 		}
 	case "DELETE":
 		err := d.BroadcastManageReq(ManageRequest{Cmd: DelNode, Path: r.URL.Path, Name: name})
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintln(w, err)
-			return
 		}
 	case "GET":
 		switch r.URL.Path {
@@ -70,14 +68,13 @@ func (d *Daemon) ManageHandler(w http.ResponseWriter, r *http.Request) {
 			if res.Err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				fmt.Fprintln(w, res.Err)
-				return
 			}
 			json.NewEncoder(w).Encode(res.Body)
+		case "/status":
+			stat := status.Get()
+			json.NewEncoder(w).Encode(stat)
 		}
-		return
-
 	}
-	return
 }
 
 func (d *Daemon) BroadcastManageReq(req ManageRequest) error {
