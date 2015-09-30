@@ -7,7 +7,7 @@ gordb
 ### Make
 
 ```
-go build -ldflags "-X main.version $(git describe)"
+go build -ldflags "-X main.version=$(git describe)"
 ```
 
 ### Usage
