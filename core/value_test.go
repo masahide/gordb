@@ -27,5 +27,9 @@ func TestVtoFS(t *testing.T) {
 	if value.(float64) != float64(1) {
 		t.Error("err bool")
 	}
+	_, value = VtoFS(Value(false))
+	if value.(float64) != float64(0) {
+		t.Error("err bool")
+	}
 
 }
