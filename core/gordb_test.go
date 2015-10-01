@@ -1,26 +1,34 @@
 package core
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/masahide/gordb/input/csv"
 )
 
 func TestRelationalStream_Staff(t *testing.T) {
 	var want = &Relation{
 		Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
-		Data: [][]Value{
-			[]Value{"清水", int64(17), "エンジニア"},
-			[]Value{"田中", int64(34), "デザイナー"},
-			[]Value{"佐藤", int64(21), "マネージャー"},
-		},
+		/*
+			Data: [][]Value{
+				[]Value{"清水", int64(17), "エンジニア"},
+				[]Value{"田中", int64(34), "デザイナー"},
+				[]Value{"佐藤", int64(21), "マネージャー"},
+			},
+		*/
 	}
-
-	original := &Relation{Name: "test/staff1"}
+	original, err := csv.LoadCsv("test/staff1.csv")
+	if err != nil {
+		return fmt.Errorf("LoadCsv file:%s err:%s", objectPath, err)
+	}
+	// original := &Relation{Name: "test/staff1"}
 	result, err := StreamToRelation(Stream{Relation: original}, testData1)
 	if err != nil {
 		t.Error(err)
 	}
-	if !reflect.DeepEqual(result.Data, want.Data) {
+	if !reflect.DeepEqual(result.Data[0].Get("name"), "清水") {
 		t.Errorf("Does not match 'SELECT * FROM Staff' original:%# v, want:%# v", result.Data, want.Data)
 	}
 }
@@ -30,11 +38,13 @@ func TestRelationalStream_Rank(t *testing.T) {
 		Name:  "rank",
 		index: 0,
 		Attrs: Schema{Attr{"name", reflect.String}, Attr{"rank", reflect.Int64}},
-		Data: [][]Value{
-			[]Value{"清水", int64(78)},
-			[]Value{"田中", int64(46)},
-			[]Value{"佐藤", int64(33)},
-		},
+		/*
+			Data: [][]Value{
+				[]Value{"清水", int64(78)},
+				[]Value{"田中", int64(46)},
+				[]Value{"佐藤", int64(33)},
+			},
+		*/
 	}
 	original := &Relation{Name: "test/rank1"}
 	result, err := StreamToRelation(Stream{Relation: original}, testData2)
@@ -50,10 +60,12 @@ func TestSelectionStream(t *testing.T) {
 	var want = &Relation{
 		index: 0,
 		Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
-		Data: [][]Value{
-			[]Value{"田中", int64(34), "デザイナー"},
-			[]Value{"佐藤", int64(21), "マネージャー"},
-		},
+		/*
+			Data: [][]Value{
+				[]Value{"田中", int64(34), "デザイナー"},
+				[]Value{"佐藤", int64(21), "マネージャー"},
+			},
+		*/
 	}
 	stream2 := &SelectionStream{Stream{Relation: &Relation{Name: "test/staff1"}}, "age", GreaterThan, 20}
 	result, _ := StreamToRelation(Stream{Selection: stream2}, testData2)
@@ -66,11 +78,13 @@ func TestProjectionStream(t *testing.T) {
 	var want = &Relation{
 		index: 0,
 		Attrs: Schema{Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
-		Data: [][]Value{
-			[]Value{int64(17), "エンジニア"},
-			[]Value{int64(34), "デザイナー"},
-			[]Value{int64(21), "マネージャー"},
-		},
+		/*
+			Data: [][]Value{
+				[]Value{int64(17), "エンジニア"},
+				[]Value{int64(34), "デザイナー"},
+				[]Value{int64(21), "マネージャー"},
+			},
+		*/
 	}
 	stream2 := &ProjectionStream{Stream{Relation: &Relation{Name: "test/staff1"}}, []string{"age", "job"}}
 	result, _ := StreamToRelation(Stream{Projection: stream2}, testData2)
@@ -83,11 +97,13 @@ func TestJoinStream(t *testing.T) {
 	var SELECT_FROM_Staff_Rank_WHERE_staff_name_rank_name = &Relation{
 		index: 0,
 		Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}, Attr{"rank", reflect.Int64}},
-		Data: [][]Value{
-			[]Value{"清水", int64(17), "エンジニア", int64(78)},
-			[]Value{"田中", int64(34), "デザイナー", int64(46)},
-			[]Value{"佐藤", int64(21), "マネージャー", int64(33)},
-		},
+		/*
+			Data: [][]Value{
+				[]Value{"清水", int64(17), "エンジニア", int64(78)},
+				[]Value{"田中", int64(34), "デザイナー", int64(46)},
+				[]Value{"佐藤", int64(21), "マネージャー", int64(33)},
+			},
+		*/
 	}
 	stream3 := &JoinStream{
 		Input1:   Stream{Relation: &Relation{Name: "test/staff1"}},
@@ -106,17 +122,19 @@ func TestCrossJoinStream(t *testing.T) {
 	var want = &Relation{
 		index: 0,
 		Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}, Attr{"name2", reflect.String}, Attr{"rank", reflect.Int64}},
-		Data: [][]Value{
-			[]Value{"清水", int64(17), "エンジニア", "清水", int64(78)},
-			[]Value{"清水", int64(17), "エンジニア", "田中", int64(46)},
-			[]Value{"清水", int64(17), "エンジニア", "佐藤", int64(33)},
-			[]Value{"田中", int64(34), "デザイナー", "清水", int64(78)},
-			[]Value{"田中", int64(34), "デザイナー", "田中", int64(46)},
-			[]Value{"田中", int64(34), "デザイナー", "佐藤", int64(33)},
-			[]Value{"佐藤", int64(21), "マネージャー", "清水", int64(78)},
-			[]Value{"佐藤", int64(21), "マネージャー", "田中", int64(46)},
-			[]Value{"佐藤", int64(21), "マネージャー", "佐藤", int64(33)},
-		},
+		/*
+			Data: [][]Value{
+				[]Value{"清水", int64(17), "エンジニア", "清水", int64(78)},
+				[]Value{"清水", int64(17), "エンジニア", "田中", int64(46)},
+				[]Value{"清水", int64(17), "エンジニア", "佐藤", int64(33)},
+				[]Value{"田中", int64(34), "デザイナー", "清水", int64(78)},
+				[]Value{"田中", int64(34), "デザイナー", "田中", int64(46)},
+				[]Value{"田中", int64(34), "デザイナー", "佐藤", int64(33)},
+				[]Value{"佐藤", int64(21), "マネージャー", "清水", int64(78)},
+				[]Value{"佐藤", int64(21), "マネージャー", "田中", int64(46)},
+				[]Value{"佐藤", int64(21), "マネージャー", "佐藤", int64(33)},
+			},
+		*/
 	}
 	stream3 := &CrossJoinStream{
 		Input1: Stream{Relation: &Relation{Name: "test/staff1"}},
@@ -131,7 +149,7 @@ func TestEmpty(t *testing.T) {
 	var want = &Relation{
 		index: 0,
 		Attrs: Schema{},
-		Data:  [][]Value{},
+		//Data:  [][]Value{},
 	}
 	stream := Stream{
 		Selection: &SelectionStream{

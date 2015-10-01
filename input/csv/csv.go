@@ -15,10 +15,10 @@ import (
 
 const inferenceRowSize = 10000
 
-func recordToData(attrs core.Schema, records [][]string) ([][]core.Value, error) {
-	result := make([][]core.Value, len(records))
+func recordToData(attrs core.Schema, records [][]string) ([]core.Tuple, error) {
+	result := make([]core.Tuple, len(records))
 	for i, row := range records {
-		result[i] = make([]core.Value, len(row))
+		tuple := core.NewTuple()
 		for j, v := range row {
 			_, value := inferenceType(v)
 			/*
@@ -27,11 +27,12 @@ func recordToData(attrs core.Schema, records [][]string) ([][]core.Value, error)
 				}
 			*/
 			if attrs[j].Kind == reflect.String {
-				result[i][j] = v
+				tuple.Set(attrs[j], v)
 				continue
 			}
-			result[i][j] = value
+			tuple.Set(attrs[j], value)
 		}
+		result[i] = *tuple
 	}
 	return result, nil
 }

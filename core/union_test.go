@@ -21,10 +21,12 @@ import (
 func TestJsonUnionDecode(t *testing.T) {
 	var want = &Relation{
 		Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
-		Data: [][]Value{
-			[]Value{"田中", int64(34), "デザイナー"},
-			[]Value{"田中", int64(34), "デザイナー"},
-		},
+		/*
+			Data: [][]Value{
+				[]Value{"田中", int64(34), "デザイナー"},
+				[]Value{"田中", int64(34), "デザイナー"},
+			},
+		*/
 	}
 
 	const jsonStream = `{

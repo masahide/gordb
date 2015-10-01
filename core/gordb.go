@@ -10,7 +10,7 @@ func StreamToRelation(s Stream, n *Node) (*Relation, error) {
 	}
 	result := &Relation{
 		Attrs: make(Schema, 0, TupleCapacity),
-		Data:  make([][]Value, 0, TupleCapacity),
+		Data:  make([]Tuple, 0, TupleCapacity),
 	}
 	lastRow := NewTuple()
 	for s.HasNext() {
@@ -22,7 +22,7 @@ func StreamToRelation(s Stream, n *Node) (*Relation, error) {
 			continue
 		}
 		lastRow = row
-		result.Data = append(result.Data, makeValues(lastRow))
+		result.Data = append(result.Data, *lastRow)
 	}
 	result.Attrs = lastRow.Attrs()
 	s.Close()

@@ -1,13 +1,33 @@
 // go-rdb Tuple
 package core
 
+import "encoding/json"
+
 type Tuple struct {
 	attrs Schema
 	data  map[string]Value
 }
 
 func NewTuple() *Tuple {
-	return &Tuple{attrs: make(Schema, 0, TupleCapacity), data: map[string]Value{}}
+	attrs := make(Schema, 0, TupleCapacity)
+	return &Tuple{attrs: attrs, data: map[string]Value{}}
+}
+func (t *Tuple) Cutout(args []string) *Tuple {
+	schema := make(Schema, 0, len(args))
+	data := map[string]Value{}
+	for _, arg := range args {
+		for _, attr := range t.attrs {
+			if attr.Name == arg {
+				schema = append(schema, attr)
+				data[arg] = t.data[arg]
+			}
+		}
+	}
+	newt := NewTuple()
+	newt.attrs = schema
+	newt.data = data
+
+	return newt
 }
 func (t *Tuple) Set(attr Attr, value Value) {
 	if _, ok := t.data[attr.Name]; !ok {
@@ -44,4 +64,12 @@ func (t *Tuple) Iterator(cb func(i int, attr Attr, value Value) error) error {
 		}
 	}
 	return nil
+}
+
+func (t *Tuple) MarshalJSON() ([]byte, error) {
+	res := make([]Value, len(t.data))
+	for i, attr := range t.Attrs() {
+		res[i] = t.data[attr.Name]
+	}
+	return json.Marshal(res)
 }

@@ -12,11 +12,13 @@ var testStaff = &Relation{
 	Name:  "staff",
 	index: 0,
 	Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
-	Data: [][]Value{
-		[]Value{"清水", int64(17), "エンジニア"},
-		[]Value{"田中", int64(34), "デザイナー"},
-		[]Value{"佐藤", int64(21), "マネージャー"},
-	},
+	/*
+		Data: [][]Value{
+			[]Value{"清水", int64(17), "エンジニア"},
+			[]Value{"田中", int64(34), "デザイナー"},
+			[]Value{"佐藤", int64(21), "マネージャー"},
+		},
+	*/
 }
 var testStaff3 *Relation
 var testRank3 *Relation
@@ -25,11 +27,13 @@ var testRank = &Relation{
 	Name:  "rank",
 	index: 0,
 	Attrs: Schema{Attr{"name", reflect.String}, Attr{"rank", reflect.Int64}},
-	Data: [][]Value{
-		[]Value{"清水", int64(78)},
-		[]Value{"田中", int64(46)},
-		[]Value{"佐藤", int64(33)},
-	},
+	/*
+		Data: [][]Value{
+			[]Value{"清水", int64(78)},
+			[]Value{"田中", int64(46)},
+			[]Value{"佐藤", int64(33)},
+		},
+	*/
 }
 
 var testData1 = &Node{
@@ -139,10 +143,12 @@ func TestGetRelation3(t *testing.T) {
 func TestJsonSelectionStream(t *testing.T) {
 	var want = &Relation{
 		Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
-		Data: [][]Value{
-			[]Value{"田中", int64(34), "デザイナー"},
-			[]Value{"佐藤", int64(21), "マネージャー"},
-		},
+		/*
+			Data: [][]Value{
+				[]Value{"田中", int64(34), "デザイナー"},
+				[]Value{"佐藤", int64(21), "マネージャー"},
+			},
+		*/
 	}
 	const jsonStream = `{ "selection": {
 			"input": { 
@@ -162,11 +168,13 @@ func TestJsonSelectionStream(t *testing.T) {
 func TestJsonProjectionStream(t *testing.T) {
 	var want = &Relation{
 		Attrs: Schema{Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
-		Data: [][]Value{
-			[]Value{int64(17), "エンジニア"},
-			[]Value{int64(34), "デザイナー"},
-			[]Value{int64(21), "マネージャー"},
-		},
+		/*
+			Data: [][]Value{
+				[]Value{int64(17), "エンジニア"},
+				[]Value{int64(34), "デザイナー"},
+				[]Value{int64(21), "マネージャー"},
+			},
+		*/
 	}
 	const jsonStream = `{ "projection": {
 			"input": { "relation": {"name":"test/staff1"}},

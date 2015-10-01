@@ -2,9 +2,9 @@ package core
 
 type Relation struct {
 	index int
-	Name  string    `json:"name,omitempty" `
-	Attrs Schema    `json:"attrs"`
-	Data  [][]Value `json:"data"`
+	Name  string  `json:"name,omitempty" `
+	Attrs Schema  `json:"attrs"`
+	Data  []Tuple `json:"data"`
 }
 
 func (r *Relation) HasNext() bool {
@@ -15,10 +15,7 @@ func (r *Relation) Close() {
 }
 
 func (r *Relation) Next() (*Tuple, error) {
-	tuple := NewTuple()
-	for i, attr := range r.Attrs {
-		tuple.Set(attr, r.Data[r.index][i])
-	}
+	tuple := &r.Data[r.index]
 	r.index++
 	return tuple, nil
 }
