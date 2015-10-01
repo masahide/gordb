@@ -20,23 +20,22 @@ func TestRelationalStream_Staff(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if !reflect.DeepEqual(original, result) {
+	if !reflect.DeepEqual(original.Data, result.Data) {
 		t.Errorf("Does not match 'SELECT * FROM Staff' original:%# v, want:%# v", result.Data, want.Data)
 	}
 }
 
 func TestRelationalStream_Rank(t *testing.T) {
+	schema := Schema{Attr{"name", reflect.String}, Attr{"rank", reflect.Int64}}
 	var want = &Relation{
 		Name:  "rank",
 		index: 0,
-		Attrs: Schema{Attr{"name", reflect.String}, Attr{"rank", reflect.Int64}},
-		/*
-			Data: [][]Value{
-				[]Value{"清水", int64(78)},
-				[]Value{"田中", int64(46)},
-				[]Value{"佐藤", int64(33)},
-			},
-		*/
+		Attrs: schema,
+		Data: []Tuple{
+			Tuple{attrs: schema, data: map[string]Value{"name": "清水", "runk": int64(78)}},
+			Tuple{attrs: schema, data: map[string]Value{"name": "田中", "runk": int64(46)}},
+			Tuple{attrs: schema, data: map[string]Value{"name": "佐藤", "runk": int64(33)}},
+		},
 	}
 	original := &Relation{Name: "test/rank1"}
 	result, err := StreamToRelation(Stream{Relation: original}, testData2)
@@ -49,15 +48,14 @@ func TestRelationalStream_Rank(t *testing.T) {
 }
 
 func TestSelectionStream(t *testing.T) {
+	schema := Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}}
 	var want = &Relation{
 		index: 0,
-		Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
-		/*
-			Data: [][]Value{
-				[]Value{"田中", int64(34), "デザイナー"},
-				[]Value{"佐藤", int64(21), "マネージャー"},
-			},
-		*/
+		Attrs: schema,
+		Data: []Tuple{
+			Tuple{attrs: schema, data: map[string]Value{"name": "田中", "age": int64(34), "job": "デザイナー"}},
+			Tuple{attrs: schema, data: map[string]Value{"name": "佐藤", "age": int64(21), "job": "マネージャー"}},
+		},
 	}
 	stream2 := &SelectionStream{Stream{Relation: &Relation{Name: "test/staff1"}}, "age", GreaterThan, 20}
 	result, _ := StreamToRelation(Stream{Selection: stream2}, testData2)

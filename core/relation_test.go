@@ -8,32 +8,30 @@ import (
 	"testing"
 )
 
+var testStaffSchema = Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}}
 var testStaff = &Relation{
 	Name:  "staff",
 	index: 0,
-	Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
-	/*
-		Data: [][]Value{
-			[]Value{"清水", int64(17), "エンジニア"},
-			[]Value{"田中", int64(34), "デザイナー"},
-			[]Value{"佐藤", int64(21), "マネージャー"},
-		},
-	*/
+	Attrs: testStaffSchema,
+	Data: []Tuple{
+		Tuple{attrs: testStaffSchema, data: map[string]Value{"name": "清水", "age": int64(17), "job": "エンジニア"}},
+		Tuple{attrs: testStaffSchema, data: map[string]Value{"name": "田中", "age": int64(34), "job": "デザイナー"}},
+		Tuple{attrs: testStaffSchema, data: map[string]Value{"name": "佐藤", "age": int64(21), "job": "マネージャー"}},
+	},
 }
 var testStaff3 *Relation
 var testRank3 *Relation
 
+var testRankSchema = Schema{Attr{"name", reflect.String}, Attr{"rank", reflect.Int64}}
 var testRank = &Relation{
 	Name:  "rank",
 	index: 0,
-	Attrs: Schema{Attr{"name", reflect.String}, Attr{"rank", reflect.Int64}},
-	/*
-		Data: [][]Value{
-			[]Value{"清水", int64(78)},
-			[]Value{"田中", int64(46)},
-			[]Value{"佐藤", int64(33)},
-		},
-	*/
+	Attrs: testRankSchema,
+	Data: []Tuple{
+		Tuple{attrs: testRankSchema, data: map[string]Value{"name": "清水", "runk": int64(78)}},
+		Tuple{attrs: testRankSchema, data: map[string]Value{"name": "田中", "runk": int64(46)}},
+		Tuple{attrs: testRankSchema, data: map[string]Value{"name": "佐藤", "runk": int64(33)}},
+	},
 }
 
 var testData1 = &Node{
