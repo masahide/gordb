@@ -1,34 +1,26 @@
 package core
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
-
-	"github.com/masahide/gordb/input/csv"
 )
 
 func TestRelationalStream_Staff(t *testing.T) {
+	schema := Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}}
 	var want = &Relation{
-		Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
-		/*
-			Data: [][]Value{
-				[]Value{"清水", int64(17), "エンジニア"},
-				[]Value{"田中", int64(34), "デザイナー"},
-				[]Value{"佐藤", int64(21), "マネージャー"},
-			},
-		*/
+		Attrs: schema,
+		Data: []Tuple{
+			Tuple{attrs: schema, data: map[string]Value{"name": "清水", "age": int64(17), "job": "エンジニア"}},
+			Tuple{attrs: schema, data: map[string]Value{"name": "田中", "age": int64(34), "job": "デザイナー"}},
+			Tuple{attrs: schema, data: map[string]Value{"name": "佐藤", "age": int64(21), "job": "マネージャー"}},
+		},
 	}
-	original, err := csv.LoadCsv("test/staff1.csv")
-	if err != nil {
-		return fmt.Errorf("LoadCsv file:%s err:%s", objectPath, err)
-	}
-	// original := &Relation{Name: "test/staff1"}
+	original := &Relation{Name: "test/staff1"}
 	result, err := StreamToRelation(Stream{Relation: original}, testData1)
 	if err != nil {
 		t.Error(err)
 	}
-	if !reflect.DeepEqual(result.Data[0].Get("name"), "清水") {
+	if !reflect.DeepEqual(original, result) {
 		t.Errorf("Does not match 'SELECT * FROM Staff' original:%# v, want:%# v", result.Data, want.Data)
 	}
 }
