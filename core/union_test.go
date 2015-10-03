@@ -19,14 +19,13 @@ import (
 */
 
 func TestJsonUnionDecode(t *testing.T) {
+	schema := Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}}
 	var want = &Relation{
-		Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
-		/*
-			Data: [][]Value{
-				[]Value{"田中", int64(34), "デザイナー"},
-				[]Value{"田中", int64(34), "デザイナー"},
-			},
-		*/
+		Attrs: schema,
+		Data: []Tuple{
+			Tuple{Attrs: schema, Data: map[string]Value{"name": "田中", "age": int64(34), "job": "デザイナー"}},
+			Tuple{Attrs: schema, Data: map[string]Value{"name": "田中", "age": int64(34), "job": "デザイナー"}},
+		},
 	}
 
 	const jsonStream = `{

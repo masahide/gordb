@@ -4,44 +4,44 @@ package core
 import "encoding/json"
 
 type Tuple struct {
-	attrs Schema
-	data  map[string]Value
+	Attrs Schema
+	Data  map[string]Value
 }
 
 func NewTuple() *Tuple {
 	attrs := make(Schema, 0, TupleCapacity)
-	return &Tuple{attrs: attrs, data: map[string]Value{}}
+	return &Tuple{Attrs: attrs, Data: map[string]Value{}}
 }
 func (t *Tuple) Cutout(args []string) *Tuple {
 	schema := make(Schema, 0, len(args))
 	data := map[string]Value{}
 	for _, arg := range args {
-		for _, attr := range t.attrs {
+		for _, attr := range t.Attrs {
 			if attr.Name == arg {
 				schema = append(schema, attr)
-				data[arg] = t.data[arg]
+				data[arg] = t.Data[arg]
 			}
 		}
 	}
 	newt := NewTuple()
-	newt.attrs = schema
-	newt.data = data
+	newt.Attrs = schema
+	newt.Data = data
 
 	return newt
 }
 func (t *Tuple) Set(attr Attr, value Value) {
-	if _, ok := t.data[attr.Name]; !ok {
-		t.attrs = append(t.attrs, attr)
+	if _, ok := t.Data[attr.Name]; !ok {
+		t.Attrs = append(t.Attrs, attr)
 	}
-	t.data[attr.Name] = value
+	t.Data[attr.Name] = value
 }
 func (t *Tuple) Get(attrName string) Value {
-	v, _ := t.data[attrName]
+	v, _ := t.Data[attrName]
 	return v
 }
 
 func (t *Tuple) GetAttr(attrName string) Attr {
-	for _, f := range t.attrs {
+	for _, f := range t.Attrs {
 		if f.Name == attrName {
 			return f
 		}
@@ -50,26 +50,28 @@ func (t *Tuple) GetAttr(attrName string) Attr {
 }
 
 func (t *Tuple) Len() int {
-	return len(t.data)
+	return len(t.Data)
 }
 
-func (t *Tuple) Attrs() Schema {
-	return t.attrs
-}
+/*func (t *Tuple) Attrs() Schema {
+	return t.Attrs
+}*/
 
+/*
 func (t *Tuple) Iterator(cb func(i int, attr Attr, value Value) error) error {
-	for i, attr := range t.Attrs() {
-		if err := cb(i, attr, t.data[attr.Name]); err != nil {
+	for i, attr := range t.Attrs {
+		if err := cb(i, attr, t.Data[attr.Name]); err != nil {
 			return err
 		}
 	}
 	return nil
 }
+*/
 
 func (t *Tuple) MarshalJSON() ([]byte, error) {
-	res := make([]Value, len(t.data))
-	for i, attr := range t.Attrs() {
-		res[i] = t.data[attr.Name]
+	res := make([]Value, len(t.Data))
+	for i, attr := range t.Attrs {
+		res[i] = t.Data[attr.Name]
 	}
 	return json.Marshal(res)
 }
