@@ -8,7 +8,7 @@ import (
 	"reflect"
 )
 
-type Operator func(Value, Value) (bool, error)
+type Operator func(reflect.Kind, Value, reflect.Kind, Value) (bool, error)
 
 func (ss *Operator) UnmarshalJSON(data []byte) error {
 	// Extract the string from data.
@@ -46,7 +46,19 @@ func typeCheck(a, b Value) (aValue, bValue Value, Kind reflect.Kind, err error) 
 	return
 }
 
-func GreaterThan(a, b Value) (bool, error) {
+func GreaterThan(akind reflect.Kind, a Value, bkind reflect.Kind, b Value) (bool, error) {
+	if akind == bkind {
+		switch akind {
+		case reflect.Int64:
+			return a.(int64) > b.(int64), nil
+		case reflect.Float64:
+			return a.(float64) > b.(float64), nil
+		case reflect.Int:
+			return a.(int) > b.(int), nil
+		case reflect.String:
+			return a.(string) > b.(string), nil
+		}
+	}
 	aValue, bValue, kind, err := typeCheck(a, b)
 	if err != nil {
 		return false, err
@@ -60,7 +72,19 @@ func GreaterThan(a, b Value) (bool, error) {
 	return false, ErrUnkownType
 }
 
-func NotGreaterThan(a, b Value) (bool, error) {
+func NotGreaterThan(akind reflect.Kind, a Value, bkind reflect.Kind, b Value) (bool, error) {
+	if akind == bkind {
+		switch akind {
+		case reflect.Int64:
+			return a.(int64) <= b.(int64), nil
+		case reflect.Float64:
+			return a.(float64) <= b.(float64), nil
+		case reflect.Int:
+			return a.(int) <= b.(int), nil
+		case reflect.String:
+			return a.(string) <= b.(string), nil
+		}
+	}
 	aValue, bValue, kind, err := typeCheck(a, b)
 	if err != nil {
 		return false, err
@@ -74,7 +98,19 @@ func NotGreaterThan(a, b Value) (bool, error) {
 	return false, ErrUnkownType
 }
 
-func LessThan(a, b Value) (bool, error) {
+func LessThan(akind reflect.Kind, a Value, bkind reflect.Kind, b Value) (bool, error) {
+	if akind == bkind {
+		switch akind {
+		case reflect.Int64:
+			return a.(int64) < b.(int64), nil
+		case reflect.Float64:
+			return a.(float64) < b.(float64), nil
+		case reflect.Int:
+			return a.(int) < b.(int), nil
+		case reflect.String:
+			return a.(string) < b.(string), nil
+		}
+	}
 	aValue, bValue, kind, err := typeCheck(a, b)
 	if err != nil {
 		return false, err
@@ -88,7 +124,19 @@ func LessThan(a, b Value) (bool, error) {
 	return false, ErrUnkownType
 }
 
-func NotLessThan(a, b Value) (bool, error) {
+func NotLessThan(akind reflect.Kind, a Value, bkind reflect.Kind, b Value) (bool, error) {
+	if akind == bkind {
+		switch akind {
+		case reflect.Int64:
+			return a.(int64) >= b.(int64), nil
+		case reflect.Float64:
+			return a.(float64) >= b.(float64), nil
+		case reflect.Int:
+			return a.(int) >= b.(int), nil
+		case reflect.String:
+			return a.(string) >= b.(string), nil
+		}
+	}
 	aValue, bValue, kind, err := typeCheck(a, b)
 	if err != nil {
 		return false, err
@@ -102,7 +150,10 @@ func NotLessThan(a, b Value) (bool, error) {
 	return false, ErrUnkownType
 }
 
-func Equal(a, b Value) (bool, error) {
+func Equal(akind reflect.Kind, a Value, bkind reflect.Kind, b Value) (bool, error) {
+	if akind == bkind {
+		return a == b, nil
+	}
 	aValue, bValue, kind, err := typeCheck(a, b)
 	if err != nil {
 		return false, err
@@ -116,7 +167,10 @@ func Equal(a, b Value) (bool, error) {
 	return false, ErrUnkownType
 }
 
-func NotEqual(a, b Value) (bool, error) {
+func NotEqual(akind reflect.Kind, a Value, bkind reflect.Kind, b Value) (bool, error) {
+	if akind == bkind {
+		return a != b, nil
+	}
 	aValue, bValue, kind, err := typeCheck(a, b)
 	if err != nil {
 		return false, err

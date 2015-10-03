@@ -57,7 +57,7 @@ func TestSelectionStream(t *testing.T) {
 			Tuple{Attrs: schema, Data: map[string]Value{"name": "佐藤", "age": int64(21), "job": "マネージャー"}},
 		},
 	}
-	stream2 := &SelectionStream{Stream{Relation: &Relation{Name: "test/staff1"}}, "age", GreaterThan, 20}
+	stream2 := &SelectionStream{Input: Stream{Relation: &Relation{Name: "test/staff1"}}, Attr: "age", Selector: GreaterThan, Arg: 20}
 	result, _ := StreamToRelation(Stream{Selection: stream2}, testData2)
 	if !reflect.DeepEqual(result, want) {
 		t.Errorf("Does not match 'SELECT * FROM Staff WHERE age > 20'\nresult:% #v,\n want:% #v", result, want)
@@ -153,7 +153,7 @@ func TestEmpty(t *testing.T) {
 	}
 	stream := Stream{
 		Selection: &SelectionStream{
-			Stream{
+			Input: Stream{
 				CrossJoin: &CrossJoinStream{
 					Input1: Stream{Relation: &Relation{Name: "test/staff1"}},
 					Input2: Stream{
@@ -163,7 +163,7 @@ func TestEmpty(t *testing.T) {
 					},
 				},
 			},
-			"age", GreaterThan, 100,
+			Attr: "age", Selector: GreaterThan, Arg: 100,
 		},
 	}
 	result, _ := StreamToRelation(stream, testData2)

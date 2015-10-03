@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	loop       = 1000
 	cpuprofile = "mycpu.prof"
 	dirname    = "20151001"
 	jsonStream = `[{ 
@@ -96,19 +97,21 @@ func (d *Daemon) Serve(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	rs := make([][]*core.Relation, 100)
+	rs := make([][]*core.Relation, loop)
 	elapsendJsonDecode := time.Now().Sub(startTime)
 	pprof.StartCPUProfile(f)
-	for i := 0; i < 100; i++ {
+	for i := 0; i < loop; i++ {
 		rs[i], err = d.QueryStreams(dirname, streams)
+		//os.Exit(0)
 		if err != nil {
 			return err
 		}
 	}
 	pprof.StopCPUProfile()
 	elapsendQuery := time.Now().Sub(startTime) - elapsendJsonDecode
-	json.NewEncoder(os.Stdout).Encode(rs)
+	//json.NewEncoder(os.Stdout).Encode(rs)
+
 	elapsedAll := time.Now().Sub(startTime)
-	log.Printf("elapsed:%s, json decode:%s, query:%s, json encode:%s", elapsedAll, elapsendJsonDecode, elapsendQuery, elapsedAll-elapsendQuery-elapsendJsonDecode)
+	log.Printf("elapsed:%s, json decode:%s, query:%s, json encode:%s,len(rs):%d", elapsedAll, elapsendJsonDecode, elapsendQuery, elapsedAll-elapsendQuery-elapsendJsonDecode, len(rs))
 	return nil
 }
