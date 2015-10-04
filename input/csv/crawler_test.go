@@ -11,16 +11,15 @@ func TestCsvCrawler(t *testing.T) {
 	if _, err := Crawler("hoge"); err == nil {
 		t.Error(err)
 	}
+	schema := core.Schema{core.Attr{"name", reflect.String}, core.Attr{"age", reflect.Int64}, core.Attr{"job", reflect.String}}
 	var want = &core.Relation{
 		Name:  "rank",
-		Attrs: core.Schema{core.Attr{"name", reflect.String}, core.Attr{"rank", reflect.Int64}},
-		/*
-			Data: [][]core.Value{
-				[]core.Value{"斎藤", int64(30), "エンジニア"},
-				[]core.Value{"山田", int64(25), "デザイナー"},
-				[]core.Value{"竹内", int64(45), "マネージャー"},
-			},
-		*/
+		Attrs: schema,
+		Data: []core.Tuple{
+			core.Tuple{Attrs: schema, Data: map[string]core.Value{"name": "斎藤", "age": int64(30), "job": "エンジニア"}},
+			core.Tuple{Attrs: schema, Data: map[string]core.Value{"name": "山田", "age": int64(25), "job": "デザイナー"}},
+			core.Tuple{Attrs: schema, Data: map[string]core.Value{"name": "竹内", "age": int64(45), "job": "マネージャー"}},
+		},
 	}
 	node, err := Crawler("../../test")
 	if err != nil {
