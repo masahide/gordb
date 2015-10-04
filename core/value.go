@@ -1,11 +1,7 @@
 // go-rdb Value
 package core
 
-import (
-	"reflect"
-	"strconv"
-	"strings"
-)
+import "reflect"
 
 type Value interface{}
 
@@ -38,21 +34,6 @@ func VtoFS(s Value) (reflect.Kind, Value) {
 	default:
 		return reflect.Invalid, t
 	}
-}
-
-func InferenceType(s string) (reflect.Kind, interface{}) {
-	if s == "" {
-		return reflect.Invalid, ""
-	}
-	if i, err := strconv.ParseInt(s, 10, 0); err == nil {
-		return reflect.Int64, i
-	}
-	if strings.IndexByte(s, byte('.')) != -1 {
-		if f, err := strconv.ParseFloat(s, 64); err == nil {
-			return reflect.Float64, f
-		}
-	}
-	return reflect.String, s
 }
 
 func CheckType(s Value) reflect.Kind {
