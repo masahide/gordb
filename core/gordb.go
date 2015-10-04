@@ -30,6 +30,7 @@ func StreamToRelation(s Stream, n *Node) (*Relation, error) {
 	return result, nil
 }
 
+/*
 func makeValues(t *Tuple) []Value {
 	m := make([]Value, 0, t.Len())
 	for _, col := range t.Attrs {
@@ -37,3 +38,4 @@ func makeValues(t *Tuple) []Value {
 	}
 	return m
 }
+*/

@@ -12,6 +12,8 @@ func NewTuple() *Tuple {
 	attrs := make(Schema, 0, TupleCapacity)
 	return &Tuple{Attrs: attrs, Data: map[string]Value{}}
 }
+
+/*
 func (t *Tuple) Cutout(args []string) *Tuple {
 	schema := make(Schema, 0, len(args))
 	data := map[string]Value{}
@@ -29,6 +31,8 @@ func (t *Tuple) Cutout(args []string) *Tuple {
 
 	return newt
 }
+*/
+
 func (t *Tuple) Set(attr Attr, value Value) {
 	if _, ok := t.Data[attr.Name]; !ok {
 		t.Attrs = append(t.Attrs, attr)
@@ -49,22 +53,9 @@ func (t *Tuple) GetAttr(attrName string) Attr {
 	return Attr{}
 }
 
+/*
 func (t *Tuple) Len() int {
 	return len(t.Data)
-}
-
-/*func (t *Tuple) Attrs() Schema {
-	return t.Attrs
-}*/
-
-/*
-func (t *Tuple) Iterator(cb func(i int, attr Attr, value Value) error) error {
-	for i, attr := range t.Attrs {
-		if err := cb(i, attr, t.Data[attr.Name]); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 */
 
