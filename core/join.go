@@ -1,6 +1,8 @@
 // go-rdb
 package core
 
+import "reflect"
+
 // Join
 type JoinStream struct {
 	Input1   Stream   `json:"input1"`
@@ -12,6 +14,8 @@ type JoinStream struct {
 	index        int
 	tuples       []*Tuple
 	currentTuple *Tuple
+	currentKind  reflect.Kind
+	targetKind   reflect.Kind
 }
 
 func (s *JoinStream) Next() (result *Tuple, err error) {
@@ -26,23 +30,25 @@ func (s *JoinStream) Next() (result *Tuple, err error) {
 		if s.currentTuple == nil {
 			return
 		}
+		s.currentKind = s.currentTuple.Attrs.GetKind(s.Attr1)
 	}
 	targetTuple := s.tuples[s.index]
+	if s.targetKind == 0 {
+		s.targetKind = targetTuple.Attrs.GetKind(s.Attr2)
+	}
 	s.index++
-	res, err := s.Selector(s.currentTuple.Get(s.Attr1), targetTuple.Get(s.Attr2))
+	res, err := s.Selector(s.currentKind, s.currentTuple.Get(s.Attr1), s.targetKind, targetTuple.Get(s.Attr2))
 	if err != nil {
 		return
 	}
 	if res {
 		result = NewTuple()
-		s.currentTuple.Iterator(func(i int, f Attr, value Value) error {
-			result.Set(f, value)
-			return nil
-		})
-		targetTuple.Iterator(func(i int, f Attr, value Value) error {
-			result.Set(f, value)
-			return nil
-		})
+		for _, attr := range s.currentTuple.Attrs {
+			result.Set(attr, s.currentTuple.Data[attr.Name])
+		}
+		for _, attr := range targetTuple.Attrs {
+			result.Set(attr, targetTuple.Data[attr.Name])
+		}
 		return
 	}
 	if s.HasNext() {

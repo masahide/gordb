@@ -28,14 +28,13 @@ func (s *CrossJoinStream) Next() (*Tuple, error) {
 	targetTuple := s.tuples[s.index]
 	s.index++
 	result := NewTuple()
-	s.currentTuple.Iterator(func(i int, f Attr, value Value) error {
-		result.Set(f, value)
-		return nil
-	})
-	targetTuple.Iterator(func(i int, f Attr, value Value) error {
-		result.Set(f, value)
-		return nil
-	})
+
+	for _, attr := range s.currentTuple.Attrs {
+		result.Set(attr, s.currentTuple.Data[attr.Name])
+	}
+	for _, attr := range targetTuple.Attrs {
+		result.Set(attr, targetTuple.Data[attr.Name])
+	}
 	return result, nil
 }
 func (s *CrossJoinStream) HasNext() bool {

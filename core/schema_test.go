@@ -10,11 +10,21 @@ import (
 
 func TestJsonMarshalRelation(t *testing.T) {
 	want := []byte(`{"attrs":["name","age","job"],"data":[["田中",34,"デザイナー"],["佐藤",21,"マネージャー"]]}`)
+	/*
+		var r = &Relation{
+			Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
+				Data: [][]Value{
+					[]Value{"田中", int64(34), "デザイナー"},
+					[]Value{"佐藤", int64(21), "マネージャー"},
+				},
+		}
+	*/
+	schema := Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}}
 	var r = &Relation{
-		Attrs: Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
-		Data: [][]Value{
-			[]Value{"田中", int64(34), "デザイナー"},
-			[]Value{"佐藤", int64(21), "マネージャー"},
+		Attrs: schema,
+		Data: []Tuple{
+			Tuple{Attrs: schema, Data: map[string]Value{"name": "田中", "age": int64(34), "job": "デザイナー"}},
+			Tuple{Attrs: schema, Data: map[string]Value{"name": "佐藤", "age": int64(21), "job": "マネージャー"}},
 		},
 	}
 	b, err := json.Marshal(r)

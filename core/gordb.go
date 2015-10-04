@@ -2,6 +2,7 @@
 package core
 
 const TupleCapacity = 100
+const RowCapacity = 5000
 
 func StreamToRelation(s Stream, n *Node) (*Relation, error) {
 	err := s.Init(n)
@@ -10,7 +11,7 @@ func StreamToRelation(s Stream, n *Node) (*Relation, error) {
 	}
 	result := &Relation{
 		Attrs: make(Schema, 0, TupleCapacity),
-		Data:  make([][]Value, 0, TupleCapacity),
+		Data:  make([]Tuple, 0, RowCapacity),
 	}
 	lastRow := NewTuple()
 	for s.HasNext() {
@@ -22,16 +23,16 @@ func StreamToRelation(s Stream, n *Node) (*Relation, error) {
 			continue
 		}
 		lastRow = row
-		result.Data = append(result.Data, makeValues(lastRow))
+		result.Data = append(result.Data, *row)
 	}
-	result.Attrs = lastRow.Attrs()
+	result.Attrs = lastRow.Attrs
 	s.Close()
 	return result, nil
 }
 
 func makeValues(t *Tuple) []Value {
 	m := make([]Value, 0, t.Len())
-	for _, col := range t.Attrs() {
+	for _, col := range t.Attrs {
 		m = append(m, t.Get(col.Name))
 	}
 	return m

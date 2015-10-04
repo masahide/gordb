@@ -14,14 +14,13 @@ func (s *RenameStream) Next() (*Tuple, error) {
 	if err != nil {
 		return tuple, err
 	}
-	tuple.Iterator(func(i int, attr Attr, value Value) error {
+	for _, attr := range tuple.Attrs {
 		if attr.Name == s.Attr {
-			result.Set(Attr{s.Name, attr.Kind}, value)
-			return nil
+			result.Set(Attr{s.Name, attr.Kind}, tuple.Data[attr.Name])
+		} else {
+			result.Set(attr, tuple.Data[attr.Name])
 		}
-		result.Set(attr, value)
-		return nil
-	})
+	}
 	return result, err
 
 }
