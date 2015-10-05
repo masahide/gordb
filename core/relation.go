@@ -70,6 +70,28 @@ func (r *Relation) NewIndex(name string) *Index {
 	return &index
 }
 
+func (i *Index) AscendGreaterOrEqual(v Value) []Tuple {
+	res := make([]Tuple, 0, i.Tree.Len())
+	i.Tree.AscendGreaterOrEqual(TupleIndex{Value: v}, func(item btree.Item) bool {
+		res = append(res, *item.(TupleIndex).Tuple)
+		return true
+	})
+	return res
+}
+func (i *Index) AscendLessThan(v Value) []Tuple {
+	res := make([]Tuple, 0, i.Tree.Len())
+	i.Tree.AscendLessThan(TupleIndex{Value: v}, func(item btree.Item) bool {
+		res = append(res, *item.(TupleIndex).Tuple)
+		return true
+	})
+	return res
+}
+
+func (i *Index) Get(v Value) *Tuple {
+	res := i.Tree.Get(TupleIndex{Value: v}).(TupleIndex)
+	return res.Tuple
+}
+
 func (r *Relation) HasNext() bool {
 	return r.current < len(r.Data)
 }
