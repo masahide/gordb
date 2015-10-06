@@ -11,7 +11,6 @@ import (
 var testStaffSchema = Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}}
 var testStaff = &Relation{
 	Name:  "staff",
-	index: 0,
 	Attrs: testStaffSchema,
 	Data: []Tuple{
 		Tuple{Attrs: testStaffSchema, Data: map[string]Value{"name": "清水", "age": int64(17), "job": "エンジニア"}},
@@ -25,12 +24,39 @@ var testRank3 *Relation
 var testRankSchema = Schema{Attr{"name", reflect.String}, Attr{"rank", reflect.Int64}}
 var testRank = &Relation{
 	Name:  "rank",
-	index: 0,
 	Attrs: testRankSchema,
 	Data: []Tuple{
 		Tuple{Attrs: testRankSchema, Data: map[string]Value{"name": "清水", "rank": int64(78)}},
 		Tuple{Attrs: testRankSchema, Data: map[string]Value{"name": "田中", "rank": int64(46)}},
 		Tuple{Attrs: testRankSchema, Data: map[string]Value{"name": "佐藤", "rank": int64(33)}},
+	},
+}
+
+var testData1Schema = Schema{Attr{"id", reflect.String}, Attr{"job", reflect.String}}
+var testRelation1 = &Relation{
+	Name:  "testData1",
+	Attrs: testData1Schema,
+	Data: []Tuple{
+		Tuple{Attrs: testData1Schema, Data: map[string]Value{"id": 1, "job": "abc"}},
+		Tuple{Attrs: testData1Schema, Data: map[string]Value{"id": 2, "job": "def"}},
+		Tuple{Attrs: testData1Schema, Data: map[string]Value{"id": 3, "job": "ghi"}},
+		Tuple{Attrs: testData1Schema, Data: map[string]Value{"id": 4, "job": "jkl"}},
+		Tuple{Attrs: testData1Schema, Data: map[string]Value{"id": 5, "job": "mno"}},
+		Tuple{Attrs: testData1Schema, Data: map[string]Value{"id": 6, "job": "pqr"}},
+	},
+}
+
+var testData2Schema = Schema{Attr{"id", reflect.String}, Attr{"job", reflect.String}}
+var testRelation2 = &Relation{
+	Name:  "testData2",
+	Attrs: testData2Schema,
+	Data: []Tuple{
+		Tuple{Attrs: testData2Schema, Data: map[string]Value{"id": 1, "job": "zxy"}},
+		Tuple{Attrs: testData2Schema, Data: map[string]Value{"id": 2, "job": "zxy"}},
+		Tuple{Attrs: testData2Schema, Data: map[string]Value{"id": 3, "job": "cjk"}},
+		Tuple{Attrs: testData2Schema, Data: map[string]Value{"id": 4, "job": "hij"}},
+		Tuple{Attrs: testData2Schema, Data: map[string]Value{"id": 5, "job": "cjk"}},
+		Tuple{Attrs: testData2Schema, Data: map[string]Value{"id": 6, "job": "zxy"}},
 	},
 }
 

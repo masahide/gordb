@@ -29,7 +29,6 @@ func TestRelationalStream_Rank(t *testing.T) {
 	schema := Schema{Attr{"name", reflect.String}, Attr{"rank", reflect.Int64}}
 	var want = &Relation{
 		Name:  "rank",
-		index: 0,
 		Attrs: schema,
 		Data: []Tuple{
 			Tuple{Attrs: schema, Data: map[string]Value{"name": "清水", "rank": int64(78)}},
@@ -50,7 +49,6 @@ func TestRelationalStream_Rank(t *testing.T) {
 func TestSelectionStream(t *testing.T) {
 	schema := Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}}
 	var want = &Relation{
-		index: 0,
 		Attrs: schema,
 		Data: []Tuple{
 			Tuple{Attrs: schema, Data: map[string]Value{"name": "田中", "age": int64(34), "job": "デザイナー"}},
@@ -67,7 +65,6 @@ func TestSelectionStream(t *testing.T) {
 func TestProjectionStream(t *testing.T) {
 	schema := Schema{Attr{"age", reflect.Int64}, Attr{"job", reflect.String}}
 	var want = &Relation{
-		index: 0,
 		Attrs: schema,
 		Data: []Tuple{
 			Tuple{Attrs: schema, Data: map[string]Value{"age": int64(17), "job": "エンジニア"}},
@@ -85,7 +82,6 @@ func TestProjectionStream(t *testing.T) {
 func TestJoinStream(t *testing.T) {
 	schema := Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}, Attr{"rank", reflect.Int64}}
 	var want = &Relation{
-		index: 0,
 		Attrs: schema,
 		Data: []Tuple{
 			Tuple{Attrs: schema, Data: map[string]Value{"name": "清水", "age": int64(17), "job": "エンジニア", "rank": int64(78)}},
@@ -109,7 +105,6 @@ func TestJoinStream(t *testing.T) {
 func TestCrossJoinStream(t *testing.T) {
 	schema := Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}, Attr{"name2", reflect.String}, Attr{"rank", reflect.Int64}}
 	var want = &Relation{
-		index: 0,
 		Attrs: schema,
 		Data: []Tuple{
 			Tuple{Attrs: schema, Data: map[string]Value{"name": "清水", "age": int64(17), "job": "エンジニア", "name2": "清水", "rank": int64(78)}},
@@ -147,7 +142,6 @@ func TestCrossJoinStream(t *testing.T) {
 
 func TestEmpty(t *testing.T) {
 	var want = &Relation{
-		index: 0,
 		Attrs: Schema{},
 		Data:  []Tuple{},
 	}
