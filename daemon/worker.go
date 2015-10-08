@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/masahide/gordb/core"
+	"github.com/wulijun/go-php-serialize/phpserialize"
 	"golang.org/x/net/context"
 )
 
@@ -63,18 +64,25 @@ func (d *Daemon) PhpHandler(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&streams)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(fmt.Sprintf("json.Decode err:%s", err))
+		s, _ := phpserialize.Encode(fmt.Sprintf("json.Decode err:%s", err))
+		fmt.Fprint(w, s)
 		return
 	}
 	elapsendJsonDecode := time.Now().Sub(startTime)
 	relations, err := d.QueryStreams(name, streams)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(err.Error)
+		s, _ := phpserialize.Encode(err.Error)
+		fmt.Fprint(w, s)
 		return
 	}
 	elapsendQuery := time.Now().Sub(startTime) - elapsendJsonDecode
-	json.NewEncoder(w).Encode(relations)
+	phpSerial, err := d.RelationsToPhpArray(relations)
+	if err != nil {
+		s, _ := phpserialize.Encode(err)
+		fmt.Fprint(w, s)
+	}
+	fmt.Fprint(w, phpSerial)
 	elapsedAll := time.Now().Sub(startTime)
 	log.Printf("elapsed:%s, json decode:%s, query:%s, json encode:%s", elapsedAll, elapsendJsonDecode, elapsendQuery, elapsedAll-elapsendQuery-elapsendJsonDecode)
 	return
@@ -97,6 +105,14 @@ func (d *Daemon) QueryStreams(name string, streams []core.Stream) (res []*core.R
 	}
 	return result, nil
 
+}
+
+func (d *Daemon) RelationsToPhpArray(rs []*core.Relation) (string, error) {
+	phpRels := map[int]core.PhpRelation{}
+	for i, rel := range rs {
+		phpRels[i] = rel.MarshalPHP()
+	}
+	return phpserialize.Encode(phpRels)
 }
 
 func (d *Daemon) Worker(ctx context.Context, ManageCh chan ManageRequest) {
