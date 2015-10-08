@@ -72,19 +72,25 @@ func (d *Daemon) PhpHandler(w http.ResponseWriter, r *http.Request) {
 	relations, err := d.QueryStreams(name, streams)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		s, _ := phpserialize.Encode(err.Error)
+		s, e := phpserialize.Encode(err.Error())
+		if e != nil {
+			log.Printf("Err:%s. (%s)", err.Error(), e)
+		}
 		fmt.Fprint(w, s)
 		return
 	}
 	elapsendQuery := time.Now().Sub(startTime) - elapsendJsonDecode
-	phpSerial, err := d.RelationsToPhpArray(relations)
+	phpArray, err := d.RelationsToPhpArray(relations)
 	if err != nil {
-		s, _ := phpserialize.Encode(err)
+		s, e := phpserialize.Encode(err)
+		if e != nil {
+			log.Printf("Err:%s. (%s)", err, e)
+		}
 		fmt.Fprint(w, s)
 	}
-	fmt.Fprint(w, phpSerial)
+	fmt.Fprint(w, phpArray)
 	elapsedAll := time.Now().Sub(startTime)
-	log.Printf("elapsed:%s, json decode:%s, query:%s, json encode:%s", elapsedAll, elapsendJsonDecode, elapsendQuery, elapsedAll-elapsendQuery-elapsendJsonDecode)
+	log.Printf("elapsed:%s, json decode:%s, query:%s, php encode:%s", elapsedAll, elapsendJsonDecode, elapsendQuery, elapsedAll-elapsendQuery-elapsendJsonDecode)
 	return
 
 }
@@ -108,11 +114,11 @@ func (d *Daemon) QueryStreams(name string, streams []core.Stream) (res []*core.R
 }
 
 func (d *Daemon) RelationsToPhpArray(rs []*core.Relation) (string, error) {
-	phpRels := map[int]core.PhpRelation{}
+	phpArray := map[interface{}]interface{}{}
 	for i, rel := range rs {
-		phpRels[i] = rel.MarshalPHP()
+		phpArray[i] = rel.MarshalPHP()
 	}
-	return phpserialize.Encode(phpRels)
+	return phpserialize.Encode(phpArray)
 }
 
 func (d *Daemon) Worker(ctx context.Context, ManageCh chan ManageRequest) {

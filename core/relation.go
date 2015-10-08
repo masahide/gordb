@@ -39,20 +39,23 @@ func (r *Relation) Init(root *Node) error {
 	return nil
 }
 
+/*
 type PhpRelation struct {
 	Name  string
 	Attrs map[int]string
 	Data  map[int]PhpTuple
 }
+*/
+type PhpRelation map[interface{}]interface{}
 
-func (r *Relation) MarshalPHP() PhpRelation {
+func (r *Relation) MarshalPHP() map[interface{}]interface{} {
 	res := PhpRelation{
-		Name:  r.Name,
-		Attrs: r.Attrs.MarshalPHP(),
-		Data:  map[int]PhpTuple{},
+		"Name":  r.Name,
+		"Attrs": r.Attrs.MarshalPHP(),
+		"Data":  map[interface{}]interface{}{},
 	}
 	for i, tuple := range r.Data {
-		res.Data[i] = tuple.MarshalPHP()
+		res["Data"].(map[interface{}]interface{})[i] = tuple.MarshalPHP()
 	}
 	return res
 }

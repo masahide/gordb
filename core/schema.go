@@ -25,10 +25,10 @@ func (s Schema) GetKind(name string) reflect.Kind {
 	return 0
 }
 
-type PhpSchema map[int]string
+type PhpSchema map[interface{}]interface{}
 
-func (a Schema) MarshalPHP() PhpSchema {
-	res := PhpSchema{}
+func (a Schema) MarshalPHP() map[interface{}]interface{} {
+	res := map[interface{}]interface{}{}
 	for i, attr := range a {
 		res[i] = attr.Name
 	}

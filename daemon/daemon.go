@@ -64,6 +64,8 @@ func (d *Daemon) Serve(ctx context.Context) error {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/query/", d.JsonHandler)
+	mux.HandleFunc("/json/", d.JsonHandler)
+	mux.HandleFunc("/php/", d.PhpHandler)
 	s := &http.Server{
 		Addr:           d.Listen,
 		Handler:        mux,
