@@ -14,6 +14,20 @@ import (
 	"golang.org/x/net/context"
 )
 
+type Options struct {
+	core.PhpOptions
+	OrderDesc  bool   `json:"order_by,omitempty"`
+	OrderBy    string `json:"order_desc,omitempty"`
+	QueryCache bool   `json:"query_cache,omitempty"`
+}
+
+type Query struct {
+	Options
+	core.Stream
+}
+
+type Querys []Query
+
 func (d *Daemon) JsonHandler(w http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
 	name := r.PostForm.Get("name")
@@ -25,16 +39,16 @@ func (d *Daemon) JsonHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	var streams []core.Stream
+	var querys Querys
 	dec := json.NewDecoder(r.Body)
-	err := dec.Decode(&streams)
+	err := dec.Decode(&querys)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(fmt.Sprintf("json.Decode err:%s", err))
 		return
 	}
 	elapsendJsonDecode := time.Now().Sub(startTime)
-	relations, err := d.QueryStreams(name, streams)
+	relations, err := d.QueryStreams(name, querys)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(err.Error)
@@ -59,9 +73,9 @@ func (d *Daemon) PhpHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	var streams []core.Stream
+	var querys Querys
 	dec := json.NewDecoder(r.Body)
-	err := dec.Decode(&streams)
+	err := dec.Decode(&querys)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		s, _ := phpserialize.Encode(fmt.Sprintf("json.Decode err:%s", err))
@@ -69,7 +83,7 @@ func (d *Daemon) PhpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	elapsendJsonDecode := time.Now().Sub(startTime)
-	relations, err := d.QueryStreams(name, streams)
+	relations, err := d.QueryStreams(name, querys)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		s, e := phpserialize.Encode(err.Error())
@@ -80,7 +94,7 @@ func (d *Daemon) PhpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	elapsendQuery := time.Now().Sub(startTime) - elapsendJsonDecode
-	phpArray, err := d.RelationsToPhpArray(relations)
+	phpArray, err := d.RelationsToPhpArray(relations, querys)
 	if err != nil {
 		s, e := phpserialize.Encode(err)
 		if e != nil {
@@ -95,14 +109,14 @@ func (d *Daemon) PhpHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (d *Daemon) QueryStreams(name string, streams []core.Stream) (res []*core.Relation, err error) {
-	result := make([]*core.Relation, len(streams))
-	resChs := make([]chan Response, len(streams))
-	for i, stream := range streams {
+func (d *Daemon) QueryStreams(name string, querys Querys) (res []*core.Relation, err error) {
+	result := make([]*core.Relation, len(querys))
+	resChs := make([]chan Response, len(querys))
+	for i, query := range querys {
 		resChs[i] = make(chan Response, 1)
-		d.Queue <- Request{Query: stream, Name: name, ResCh: resChs[i]}
+		d.Queue <- Request{Query: query.Stream, Name: name, ResCh: resChs[i]}
 	}
-	for i := 0; i < len(streams); i++ {
+	for i := 0; i < len(querys); i++ {
 		res := <-resChs[i]
 		if res.Err != nil {
 			return nil, res.Err
@@ -113,10 +127,10 @@ func (d *Daemon) QueryStreams(name string, streams []core.Stream) (res []*core.R
 
 }
 
-func (d *Daemon) RelationsToPhpArray(rs []*core.Relation) (string, error) {
+func (d *Daemon) RelationsToPhpArray(rs []*core.Relation, querys Querys) (string, error) {
 	phpArray := map[interface{}]interface{}{}
 	for i, rel := range rs {
-		phpArray[i] = rel.MarshalPHP()
+		phpArray[i] = rel.MarshalPHP(querys[i].PhpOptions)
 	}
 	return phpserialize.Encode(phpArray)
 }

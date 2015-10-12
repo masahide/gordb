@@ -17,7 +17,8 @@ import (
 type ManageCmd uint
 
 const (
-	PutNode ManageCmd = 1 << iota
+	PostNode ManageCmd = 1 << iota
+	MoveNode
 	DelNode
 	GetNodeList
 	GetNodes
@@ -29,6 +30,8 @@ type ManageRequest struct {
 	Path  string
 	Node  *core.Node
 	ResCh chan ManageResponse
+	From  string
+	To    string
 }
 
 type ManageResponse struct {
@@ -37,12 +40,13 @@ type ManageResponse struct {
 }
 
 func (d *Daemon) ManageHandler(w http.ResponseWriter, r *http.Request) {
-	name := r.PostForm.Get("name")
-	if name != "" {
-		name = strings.TrimRight(path.Base(r.URL.Path), "/")
-	}
 	switch r.Method {
-	case "PUT":
+	case "POST": // load
+		name := strings.TrimRight(path.Base(r.URL.Path), "/")
+		dirpath := r.PostForm.Get("path")
+		if name != "" {
+			name = strings.TrimRight(path.Base(dirpath), "/")
+		}
 		node, err := csv.Crawler(r.URL.Path)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -50,13 +54,25 @@ func (d *Daemon) ManageHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, err)
 			log.Println(err)
 		}
-		err = d.BroadcastManageReq(ManageRequest{Cmd: PutNode, Path: r.URL.Path, Name: name, Node: node})
+		err = d.BroadcastManageReq(ManageRequest{Cmd: PostNode, Path: dirpath, Name: name, Node: node})
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintln(w, err)
 		}
-	case "DELETE":
-		err := d.BroadcastManageReq(ManageRequest{Cmd: DelNode, Path: r.URL.Path, Name: name})
+	case "PUT": // move
+		name := strings.TrimRight(path.Base(r.URL.Path), "/")
+		if name == "move" {
+			from := r.PostForm.Get("from")
+			to := r.PostForm.Get("to")
+			err := d.BroadcastManageReq(ManageRequest{Cmd: MoveNode, From: from, To: to})
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				fmt.Fprintln(w, err)
+			}
+		}
+	case "DELETE": //delete
+		name := strings.TrimRight(path.Base(r.URL.Path), "/")
+		err := d.BroadcastManageReq(ManageRequest{Cmd: DelNode, Name: name})
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintln(w, err)
@@ -64,7 +80,7 @@ func (d *Daemon) ManageHandler(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		switch r.URL.Path {
 		case "/list":
-			res := d.sendManageReq(ManageRequest{Cmd: GetNodeList, Path: r.URL.Path, Name: name})
+			res := d.sendManageReq(ManageRequest{Cmd: GetNodeList})
 			if res.Err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				fmt.Fprintln(w, res.Err)
@@ -102,15 +118,25 @@ func (d *Daemon) sendManageReq(req ManageRequest) ManageResponse {
 func (d *Daemon) manageWork(req ManageRequest, node *core.Node) ManageResponse {
 	res := ManageResponse{}
 	switch req.Cmd {
-	case PutNode:
+	case PostNode:
 		node.Nodes[req.Name] = req.Node
 		return res
 	case DelNode:
 		_, ok := node.Nodes[req.Name]
 		if ok {
 			delete(node.Nodes, req.Name)
+			return res
 		}
 		log.Printf("Name Not found: %s", req.Name)
+		return res
+	case MoveNode:
+		n, ok := node.Nodes[req.From]
+		if ok {
+			node.Nodes[req.To] = n
+			delete(node.Nodes, req.From)
+			return res
+		}
+		log.Printf("Name Not found: %s", req.From)
 		return res
 	case GetNodeList:
 		list := make([]string, 0, len(node.Nodes))
