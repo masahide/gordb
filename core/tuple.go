@@ -71,7 +71,7 @@ type PhpTuple map[interface{}]interface{}
 
 func (t *Tuple) MarshalPHP(o PhpOptions) map[interface{}]interface{} {
 	res := map[interface{}]interface{}{}
-	if o.kvFmt {
+	if o.KvFmt {
 		for _, attr := range t.Attrs {
 			res[attr.Name] = t.Data[attr.Name]
 		}

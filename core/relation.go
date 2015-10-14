@@ -47,7 +47,7 @@ type PhpRelation struct {
 }
 */
 type PhpOptions struct {
-	kvFmt  bool   `json:"kv,omitempty"`
+	KvFmt  bool   `json:"kv,omitempty"`
 	MapKey string `json:"map_key,omitempty"`
 }
 type PhpRelation map[interface{}]interface{}

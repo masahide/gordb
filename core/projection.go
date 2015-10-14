@@ -12,6 +12,9 @@ func (s *ProjectionStream) Next() (result *Tuple, err error) {
 	if tuple, err = s.Input.Next(); err != nil {
 		return
 	}
+	if tuple == nil {
+		return
+	}
 	result = NewTuple()
 	for _, Attr := range s.Attrs {
 		result.Set(tuple.GetAttr(Attr), tuple.Get(Attr))

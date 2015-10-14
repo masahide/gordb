@@ -2,6 +2,7 @@ package csv
 
 import (
 	enc "encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -16,9 +17,13 @@ import (
 const inferenceRowSize = 10000
 
 func recordToData(attrs core.Schema, records [][]string) ([]core.Tuple, error) {
+	if attrs == nil {
+		return nil, errors.New("attrs is nil.")
+	}
 	result := make([]core.Tuple, len(records))
 	for i, row := range records {
 		tuple := core.NewTuple()
+		tuple.Attrs = attrs
 		for j, v := range row {
 			_, value := inferenceType(v)
 			/*
@@ -27,10 +32,10 @@ func recordToData(attrs core.Schema, records [][]string) ([]core.Tuple, error) {
 				}
 			*/
 			if attrs[j].Kind == reflect.String {
-				tuple.Set(attrs[j], v)
+				tuple.Data[attrs[j].Name] = v
 				continue
 			}
-			tuple.Set(attrs[j], value)
+			tuple.Data[attrs[j].Name] = value
 		}
 		result[i] = *tuple
 	}
