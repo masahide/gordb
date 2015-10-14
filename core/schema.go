@@ -24,3 +24,13 @@ func (s Schema) GetKind(name string) reflect.Kind {
 	}
 	return 0
 }
+
+type PhpSchema map[interface{}]interface{}
+
+func (a Schema) MarshalPHP(o PhpOptions) map[interface{}]interface{} {
+	res := map[interface{}]interface{}{}
+	for i, attr := range a {
+		res[i] = attr.Name
+	}
+	return res
+}

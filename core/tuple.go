@@ -66,3 +66,19 @@ func (t *Tuple) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(res)
 }
+
+type PhpTuple map[interface{}]interface{}
+
+func (t *Tuple) MarshalPHP(o PhpOptions) map[interface{}]interface{} {
+	res := map[interface{}]interface{}{}
+	if o.KvFmt {
+		for _, attr := range t.Attrs {
+			res[attr.Name] = t.Data[attr.Name]
+		}
+	} else {
+		for i, attr := range t.Attrs {
+			res[i] = t.Data[attr.Name]
+		}
+	}
+	return res
+}

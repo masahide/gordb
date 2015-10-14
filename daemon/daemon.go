@@ -57,13 +57,15 @@ func (d *Daemon) Serve(ctx context.Context) error {
 			return err
 		}
 		log.Printf("load dir:%s", dir)
-		err = d.BroadcastManageReq(ManageRequest{Cmd: PutNode, Path: name, Name: name, Node: node})
+		err = d.BroadcastManageReq(ManageRequest{Cmd: PostNode, Path: name, Name: name, Node: node})
 		if err != nil {
 			return err
 		}
 	}
 	mux := http.NewServeMux()
-	mux.HandleFunc("/query/", d.Handler)
+	mux.HandleFunc("/query/", d.JsonHandler)
+	mux.HandleFunc("/json/", d.JsonHandler)
+	mux.HandleFunc("/php/", d.PhpHandler)
 	s := &http.Server{
 		Addr:           d.Listen,
 		Handler:        mux,
