@@ -22,8 +22,8 @@ type Options struct {
 }
 
 type Query struct {
-	Options
-	core.Stream
+	Options     `json:"options"`
+	core.Stream `json:"stream"`
 }
 
 type Querys []Query

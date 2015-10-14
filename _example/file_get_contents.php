@@ -2,24 +2,30 @@
 
 
 $body = '[
-{
-	"union": {
-		"input1": {"selection": {
-			"input": { "relation": { "name": "staff" } },
-				"attr": "age",  "selector": ">=", "arg": 31
-		}},
-			"input2": {"selection": {
-				"input": { "relation": { "name": "staff" } },
-				"attr": "name", "selector": "==", "arg": "山田"
-			}}
+	{
+		"options": { "kv": true, "map_key": "name" }, 
+		"stream": {
+			"union": {
+				"input1": {"selection": {
+					"input": { "relation": { "name": "staff" } },
+						"attr": "age",  "selector": ">=", "arg": 31
+				}},
+					"input2": {"selection": {
+						"input": { "relation": { "name": "staff" } },
+						"attr": "name", "selector": "==", "arg": "山田"
+					}}
+			}
+		}
+	},
+	{
+		"options": { "kv": true, "map_key": "name" }, 
+		"stream": {
+			"selection": {
+				"input": { "relation": { "name": "rank" } },
+				"attr": "rank",  "selector": ">=", "arg": 1
+			}
+		}
 	}
-},
-{
-	"selection": {
-		"input": { "relation": { "name": "rank" } },
-		"attr": "rank",  "selector": ">=", "arg": 1
-	}
-}
 ]';
 
 $context = stream_context_create( array('http' =>

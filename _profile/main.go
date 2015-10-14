@@ -3,9 +3,7 @@ package main
 import (
 	"encoding/json"
 	"log"
-	"os"
 	"path"
-	"runtime/pprof"
 	"strings"
 	"time"
 
@@ -16,15 +14,21 @@ import (
 )
 
 const (
-	loop       = 1000
+	Loop       = 1000
 	cpuprofile = "mycpu.prof"
 	dirname    = "20151001"
-	jsonStream = `[{ 
+	querys1    = `[ {"stream":{ 
 		"selection": {
 			"input": { "relation": { "name": "csv/action" } },
 			"attr": "action_id",  "selector": "==", "arg": 44
 		}
-	}]`
+	}}]`
+	querys2 = `[ {"stream":{
+		"selection": {
+			"input": { "relation": { "name": "csv/status_ailments" } },
+			"attr": "id",  "selector": "==", "arg": 8010020201
+		}
+	}}]`
 )
 
 func main() {
@@ -64,10 +68,12 @@ func NewDaemon(conf daemon.Config) *Daemon {
 
 func (d *Daemon) Serve(ctx context.Context) error {
 
-	f, err := os.Create(cpuprofile)
-	if err != nil {
-		log.Fatal(err)
-	}
+	/*
+		f, err := os.Create(cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+	*/
 	for i := 0; i < d.WorkerLimit; i++ {
 		d.MngQ[i] = make(chan daemon.ManageRequest, 1)
 		go d.Worker(ctx, d.MngQ[i])
@@ -84,30 +90,36 @@ func (d *Daemon) Serve(ctx context.Context) error {
 			return err
 		}
 		log.Printf("load dir:%s", dir)
-		err = d.BroadcastManageReq(daemon.ManageRequest{Cmd: daemon.PutNode, Path: name, Name: name, Node: node})
+		err = d.BroadcastManageReq(daemon.ManageRequest{Cmd: daemon.PostNode, Path: name, Name: name, Node: node})
 		if err != nil {
 			return err
 		}
 	}
+	d.queryTest(Loop, querys1)
+	d.queryTest(1, querys2)
+	d.queryTest(1, querys1)
+	return nil
+}
+
+func (d *Daemon) queryTest(loop int, jsontext string) error {
 	startTime := time.Now()
 
-	var streams []core.Stream
-	dec := json.NewDecoder(strings.NewReader(jsonStream))
-	err = dec.Decode(&streams)
+	var querys daemon.Querys
+	dec := json.NewDecoder(strings.NewReader(jsontext))
+	err := dec.Decode(&querys)
 	if err != nil {
 		return err
 	}
 	rs := make([][]*core.Relation, loop)
 	elapsendJsonDecode := time.Now().Sub(startTime)
-	pprof.StartCPUProfile(f)
+	//pprof.StartCPUProfile(f)
 	for i := 0; i < loop; i++ {
-		rs[i], err = d.QueryStreams(dirname, streams)
-		//os.Exit(0)
+		rs[i], err = d.QueryStreams(dirname, querys)
 		if err != nil {
-			return err
+			panic(err)
 		}
 	}
-	pprof.StopCPUProfile()
+	//pprof.StopCPUProfile()
 	elapsendQuery := time.Now().Sub(startTime) - elapsendJsonDecode
 	//json.NewEncoder(os.Stdout).Encode(rs)
 
