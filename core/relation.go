@@ -118,10 +118,11 @@ func (r *Relation) MarshalPHP(o PhpOptions) map[interface{}]interface{} {
 }
 
 func (r *Relation) CreateIndex() {
+	r.staticIndex = make([]indexArrays, len(r.Attrs.Attrs))
 	for i, _ := range r.Attrs.Attrs {
 		arry := make(indexArrays, len(r.Data))
-		for j, v := range r.Data[i] {
-			arry[j] = indexArray{key: v, ptr: j}
+		for j, v := range r.Data {
+			arry[j] = indexArray{key: v[i], ptr: j}
 		}
 		sort.Sort(arry)
 		r.staticIndex[i] = arry

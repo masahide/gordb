@@ -185,11 +185,11 @@ func NotEqual(akind reflect.Kind, a Value, bkind reflect.Kind, b Value) (bool, e
 }
 
 func Compare(a Value, b Value, operator func(reflect.Kind, Value, reflect.Kind, Value) (bool, error)) bool {
-	_, _, kind, err := typeCheck(a, b)
+	av, bv, kind, err := typeCheck(a, b)
 	if err != nil {
 		return false
 	}
-	res, err := operator(kind, a, kind, b)
+	res, err := operator(kind, av, kind, bv)
 	if err != nil {
 		return false
 	}

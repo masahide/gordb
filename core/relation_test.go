@@ -197,3 +197,46 @@ func TestJsonProjectionStream(t *testing.T) {
 		t.Errorf("Does not match 'SELECT age,job FROM Staff'\nresult:% #v,\n want:% #v", result, want)
 	}
 }
+
+var testStaff2 = &Relation{
+	Name:  "staff",
+	index: 0,
+	Attrs: &testStaffSchema,
+	Data: [][]Value{
+		[]Value{"清水", int64(17), "エンジニア"},
+		[]Value{"佐藤", int64(35), "マネージャー"},
+		[]Value{"田中", int64(34), "デザイナー"},
+		[]Value{"佐藤", int64(21), "マネージャー"},
+		[]Value{"佐藤", int64(34), "マネージャー"},
+	},
+}
+
+func TestCreateIndex(t *testing.T) {
+	testStaff2.CreateIndex()
+	want := []indexArrays{
+		indexArrays{
+			indexArray{key: "佐藤", ptr: 1},
+			indexArray{key: "佐藤", ptr: 3},
+			indexArray{key: "佐藤", ptr: 4},
+			indexArray{key: "清水", ptr: 0},
+			indexArray{key: "田中", ptr: 2},
+		},
+		indexArrays{
+			indexArray{key: int64(17), ptr: 0},
+			indexArray{key: int64(21), ptr: 3},
+			indexArray{key: int64(34), ptr: 2},
+			indexArray{key: int64(34), ptr: 4},
+			indexArray{key: int64(35), ptr: 1},
+		},
+		indexArrays{
+			indexArray{key: "エンジニア", ptr: 0},
+			indexArray{key: "デザイナー", ptr: 2},
+			indexArray{key: "マネージャー", ptr: 1},
+			indexArray{key: "マネージャー", ptr: 3},
+			indexArray{key: "マネージャー", ptr: 4},
+		},
+	}
+	if !reflect.DeepEqual(testStaff2.staticIndex, want) {
+		t.Errorf("Does not match \nstaticIndex:%v,\n       want:%v", testStaff2.staticIndex, want)
+	}
+}
