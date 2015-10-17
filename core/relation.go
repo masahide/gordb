@@ -1,6 +1,9 @@
 package core
 
-import "sort"
+import (
+	"reflect"
+	"sort"
+)
 
 type Relation struct {
 	index       int
@@ -129,48 +132,61 @@ func (r *Relation) CreateIndex() {
 	}
 }
 
-/*
-IndexedCSVRelationalStream.prototype.createIndex = function (dataTypes) {
-	var staticIndex = {},
-	i,
-	j,
-	key;
-
-	for (i = 0; i < this.header.length; i++) {
-		var arry = [];
-
-		for (j = 1; j < this.data.length; j++) {
-			switch (dataTypes[i]) {
-			case 'Number':
-				key = Number(this.data[j][i]);
-				break;
-			case 'String':
-				key = this.data[j][i];
-				break;
-			case 'Date':
-				key = new Date(this.data[j][i]).getTime();
-				break;
-			default:
-				throw new TypeError('invalid type is specified');
-				break;
-			}
-			arry.push({
-				key: key,
-				pointer: j
-			});
-		}
-
-		arry = arry.sort(function (a, b) {
-			if (a.key < b.key) return -1;
-			if (a.key > b.key) return 1;
-			if (a.pointer < b.pointer) return -1;
-			if (a.pointer > b.pointer) return 1;
-			return 0;
-		});
-
-		staticIndex[this.header[i]] = arry;
+func (r *Relation) findSameValueInDesc(attr string, from int, key Value) int {
+	i, ok := r.Attrs.Index[attr]
+	if !ok {
+		return from
 	}
+	arry := r.staticIndex[i]
+	i = from
+	for i > -1 && arry[i].key == key {
+		i--
+	}
+	return i + 1
+}
 
-	this.staticIndex = staticIndex;
-};
-*/
+func (r *Relation) findSameValueInAsc(attr string, from int, key Value) int {
+	i, ok := r.Attrs.Index[attr]
+	if !ok {
+		return from
+	}
+	arry := r.staticIndex[i]
+	i = from
+	for i < len(arry) && arry[i].key == key {
+		i++
+	}
+	return i - 1
+}
+
+func (r *Relation) multiSearch(attr string, key Value, kind reflect.Kind) []int {
+	result := []int{}
+	i, ok := r.Attrs.Index[attr]
+	if !ok {
+		return result
+	}
+	arry := r.staticIndex[i]
+	tail := len(arry) - 1
+
+	for head := 0; head <= tail; {
+		mid := head + ((tail - head) / 2)
+		if ok, _ := GreaterThan(kind, arry[mid].key, kind, key); ok {
+			tail = mid - 1
+		} else if ok, _ := LessThan(kind, arry[mid].key, kind, key); ok {
+			head = mid + 1
+		} else {
+			from := r.findSameValueInDesc(attr, mid, key)
+			to := r.findSameValueInAsc(attr, mid, key)
+			result = make([]int, to-from)
+			for i := 0; i <= to-from; i++ {
+				result[i] = arry[from+i].ptr
+			}
+			return result
+		}
+	}
+	return result
+
+}
+
+/*
+
+ */

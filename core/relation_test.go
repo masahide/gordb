@@ -240,3 +240,43 @@ func TestCreateIndex(t *testing.T) {
 		t.Errorf("Does not match \nstaticIndex:%v,\n       want:%v", testStaff2.staticIndex, want)
 	}
 }
+func TestFindSameValueInDesc(t *testing.T) {
+	testStaff2.CreateIndex()
+	res := testStaff2.findSameValueInDesc("hoge", 0, 0)
+	if res != 0 {
+		t.Errorf("res != 0 res:%v", res)
+	}
+	res = testStaff2.findSameValueInDesc("name", 0, "佐藤")
+	if res != 0 {
+		t.Errorf("res != 0 res:%v", res)
+	}
+	res = testStaff2.findSameValueInDesc("name", 3, "清水")
+	if res != 3 {
+		t.Errorf("res != 3 res:%v", res)
+	}
+	res = testStaff2.findSameValueInDesc("name", 4, "田中1")
+	if res != 5 {
+		t.Errorf("res != 5 res:%v", res)
+	}
+
+}
+func TestFindSameValueInAsc(t *testing.T) {
+	testStaff2.CreateIndex()
+	res := testStaff2.findSameValueInAsc("hoge", 0, 0)
+	if res != 0 {
+		t.Error("res != 0")
+	}
+	res = testStaff2.findSameValueInAsc("name", 0, "佐藤")
+	if res != 2 {
+		t.Errorf("res != 2 res:%v", res)
+	}
+	res = testStaff2.findSameValueInAsc("name", 3, "清水")
+	if res != 3 {
+		t.Errorf("res != 3 res:%v", res)
+	}
+	res = testStaff2.findSameValueInAsc("name", 4, "田中1")
+	if res != 3 {
+		t.Errorf("res != 3 res:%v", res)
+	}
+
+}
