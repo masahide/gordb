@@ -30,11 +30,11 @@ func (s *JoinStream) Next() (result *Tuple, err error) {
 		if s.currentTuple == nil {
 			return
 		}
-		s.currentKind = s.currentTuple.Attrs.GetKind(s.Attr1)
+		s.currentKind = s.currentTuple.Schema.GetKind(s.Attr1)
 	}
 	targetTuple := s.tuples[s.index]
 	if s.targetKind == 0 {
-		s.targetKind = targetTuple.Attrs.GetKind(s.Attr2)
+		s.targetKind = targetTuple.Schema.GetKind(s.Attr2)
 	}
 	s.index++
 	res, err := s.Selector(s.currentKind, s.currentTuple.Get(s.Attr1), s.targetKind, targetTuple.Get(s.Attr2))
@@ -43,11 +43,11 @@ func (s *JoinStream) Next() (result *Tuple, err error) {
 	}
 	if res {
 		result = NewTuple()
-		for _, attr := range s.currentTuple.Attrs {
-			result.Set(attr, s.currentTuple.Data[attr.Name])
+		for i, attr := range s.currentTuple.Attrs {
+			result.Set(attr, s.currentTuple.Data[i])
 		}
-		for _, attr := range targetTuple.Attrs {
-			result.Set(attr, targetTuple.Data[attr.Name])
+		for i, attr := range targetTuple.Attrs {
+			result.Set(attr, targetTuple.Data[i])
 		}
 		return
 	}

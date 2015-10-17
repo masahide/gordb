@@ -4,53 +4,37 @@ package core
 import "encoding/json"
 
 type Tuple struct {
-	Attrs Schema
-	Data  map[string]Value
+	*Schema
+	Data []Value
 }
 
 func NewTuple() *Tuple {
-	attrs := make(Schema, 0, TupleCapacity)
-	return &Tuple{Attrs: attrs, Data: map[string]Value{}}
+	return &Tuple{Schema: NewSchema(), Data: []Value{}}
 }
-
-/*
-func (t *Tuple) Cutout(args []string) *Tuple {
-	schema := make(Schema, 0, len(args))
-	data := map[string]Value{}
-	for _, arg := range args {
-		for _, attr := range t.Attrs {
-			if attr.Name == arg {
-				schema = append(schema, attr)
-				data[arg] = t.Data[arg]
-			}
-		}
-	}
-	newt := NewTuple()
-	newt.Attrs = schema
-	newt.Data = data
-
-	return newt
-}
-*/
 
 func (t *Tuple) Set(attr Attr, value Value) {
-	if _, ok := t.Data[attr.Name]; !ok {
-		t.Attrs = append(t.Attrs, attr)
+	if i, ok := t.Index[attr.Name]; ok {
+		t.Data[i] = value
+		return
 	}
-	t.Data[attr.Name] = value
+	t.Index[attr.Name] = len(t.Attrs)
+	t.Attrs = append(t.Attrs, attr)
+	t.Data = append(t.Data, value)
 }
 func (t *Tuple) Get(attrName string) Value {
-	v, _ := t.Data[attrName]
-	return v
+	i, ok := t.Index[attrName]
+	if ok {
+		return t.Data[i]
+	}
+	return nil
 }
 
 func (t *Tuple) GetAttr(attrName string) Attr {
-	for _, f := range t.Attrs {
-		if f.Name == attrName {
-			return f
-		}
+	i, ok := t.Schema.Index[attrName]
+	if !ok {
+		return Attr{}
 	}
-	return Attr{}
+	return t.Attrs[i]
 }
 
 /*
@@ -62,7 +46,7 @@ func (t *Tuple) Len() int {
 func (t *Tuple) MarshalJSON() ([]byte, error) {
 	res := make([]Value, len(t.Data))
 	for i, attr := range t.Attrs {
-		res[i] = t.Data[attr.Name]
+		res[i] = t.Data[t.Index[attr.Name]]
 	}
 	return json.Marshal(res)
 }
@@ -73,11 +57,11 @@ func (t *Tuple) MarshalPHP(o PhpOptions) map[interface{}]interface{} {
 	res := map[interface{}]interface{}{}
 	if o.KvFmt {
 		for _, attr := range t.Attrs {
-			res[attr.Name] = t.Data[attr.Name]
+			res[attr.Name] = t.Data[t.Index[attr.Name]]
 		}
 	} else {
 		for i, attr := range t.Attrs {
-			res[i] = t.Data[attr.Name]
+			res[i] = t.Data[t.Index[attr.Name]]
 		}
 	}
 	return res
