@@ -103,6 +103,7 @@ func typeInference(r io.ReadSeeker) (*core.Schema, error) {
 	attrs := make([]core.Attr, len(record))
 	for i, attr := range record {
 		attrs[i].Name = attr
+		s.Index[attr] = i
 	}
 	for _, record := range records[1:] {
 		for i, attr := range record {
