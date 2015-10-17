@@ -29,11 +29,11 @@ func (s *CrossJoinStream) Next() (*Tuple, error) {
 	s.index++
 	result := NewTuple()
 
-	for _, attr := range s.currentTuple.Attrs {
-		result.Set(attr, s.currentTuple.Data[attr.Name])
+	for i, attr := range s.currentTuple.Attrs {
+		result.Set(attr, s.currentTuple.Data[i])
 	}
-	for _, attr := range targetTuple.Attrs {
-		result.Set(attr, targetTuple.Data[attr.Name])
+	for i, attr := range targetTuple.Attrs {
+		result.Set(attr, targetTuple.Data[i])
 	}
 	return result, nil
 }

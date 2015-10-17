@@ -16,14 +16,14 @@ import (
 
 const inferenceRowSize = 10000
 
-func recordToData(attrs core.Schema, records [][]string) ([]core.Tuple, error) {
+func recordToData(attrs *core.Schema, records [][]string) ([]core.Tuple, error) {
 	if attrs == nil {
 		return nil, errors.New("attrs is nil.")
 	}
 	result := make([]core.Tuple, len(records))
 	for i, row := range records {
 		tuple := core.NewTuple()
-		tuple.Attrs = attrs
+		tuple.Schema = attrs
 		for j, v := range row {
 			_, value := inferenceType(v)
 			/*
@@ -31,11 +31,11 @@ func recordToData(attrs core.Schema, records [][]string) ([]core.Tuple, error) {
 					return nil, fmt.Errorf("Type is different. line:%d,col:%d value:%v(type:%s), want:%s", i+2, j+1, v, kind, attrs[j].Kind)
 				}
 			*/
-			if attrs[j].Kind == reflect.String {
-				tuple.Data[attrs[j].Name] = v
+			if attrs.Attrs[j].Kind == reflect.String {
+				tuple.Data[j] = v
 				continue
 			}
-			tuple.Data[attrs[j].Name] = value
+			tuple.Data[j] = value
 		}
 		result[i] = *tuple
 	}
@@ -83,7 +83,7 @@ func NewCSVRelationalStream(r io.ReadSeeker) (*core.Relation, error) {
 	}, nil
 }
 
-func typeInference(r io.ReadSeeker) (core.Schema, error) {
+func typeInference(r io.ReadSeeker) (*core.Schema, error) {
 	reader := enc.NewReader(r)
 	defer r.Seek(0, 0)
 	records := make([][]string, 0, inferenceRowSize)
@@ -100,29 +100,31 @@ func typeInference(r io.ReadSeeker) (core.Schema, error) {
 	}
 
 	record := records[0]
-	s := make(core.Schema, len(record))
+	s := core.NewSchema()
+	attrs := make([]core.Attr, len(record))
 	for i, attr := range record {
-		s[i].Name = attr
+		attrs[i].Name = attr
 	}
 	for _, record := range records[1:] {
 		for i, attr := range record {
 			kind, _ := inferenceType(attr)
-			if s[i].Kind == reflect.Invalid {
-				s[i].Kind = kind
+			if attrs[i].Kind == reflect.Invalid {
+				attrs[i].Kind = kind
 				continue
 			}
-			if s[i].Kind == reflect.Int64 && kind == reflect.Float64 {
-				s[i].Kind = kind
+			if attrs[i].Kind == reflect.Int64 && kind == reflect.Float64 {
+				attrs[i].Kind = kind
 				continue
 			}
-			if s[i].Kind == reflect.String && kind != reflect.String {
-				//return s, fmt.Errorf("inference type detect error. Kind:%s->%s", s[i].Kind, kind)
-				s[i].Kind = kind // Promotion to string
+			if attrs[i].Kind == reflect.String && kind != reflect.String {
+				//return attrs, fmt.Errorf("inference type detect error. Kind:%s->%s", attrs[i].Kind, kind)
+				attrs[i].Kind = kind // Promotion to string
 				continue
 			}
 
 		}
 	}
+	s.Attrs = attrs
 	return s, nil
 }
 

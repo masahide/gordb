@@ -8,29 +8,35 @@ import (
 	"testing"
 )
 
-var testStaffSchema = Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}}
+var testStaffSchema = Schema{
+	Attrs: []Attr{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
+	Index: map[string]int{"name": 0, "age": 1, "job": 2},
+}
 var testStaff = &Relation{
 	Name:  "staff",
 	index: 0,
-	Attrs: testStaffSchema,
-	Data: []Tuple{
-		Tuple{Attrs: testStaffSchema, Data: map[string]Value{"name": "清水", "age": int64(17), "job": "エンジニア"}},
-		Tuple{Attrs: testStaffSchema, Data: map[string]Value{"name": "田中", "age": int64(34), "job": "デザイナー"}},
-		Tuple{Attrs: testStaffSchema, Data: map[string]Value{"name": "佐藤", "age": int64(21), "job": "マネージャー"}},
+	Attrs: &testStaffSchema,
+	Data: [][]Value{
+		[]Value{"清水", int64(17), "エンジニア"},
+		[]Value{"田中", int64(34), "デザイナー"},
+		[]Value{"佐藤", int64(21), "マネージャー"},
 	},
 }
 var testStaff3 *Relation
 var testRank3 *Relation
 
-var testRankSchema = Schema{Attr{"name", reflect.String}, Attr{"rank", reflect.Int64}}
+var testRankSchema = Schema{
+	Attrs: []Attr{Attr{"name", reflect.String}, Attr{"rank", reflect.Int64}},
+	Index: map[string]int{"name": 0, "rank": 1},
+}
 var testRank = &Relation{
 	Name:  "rank",
 	index: 0,
-	Attrs: testRankSchema,
-	Data: []Tuple{
-		Tuple{Attrs: testRankSchema, Data: map[string]Value{"name": "清水", "rank": int64(78)}},
-		Tuple{Attrs: testRankSchema, Data: map[string]Value{"name": "田中", "rank": int64(46)}},
-		Tuple{Attrs: testRankSchema, Data: map[string]Value{"name": "佐藤", "rank": int64(33)}},
+	Attrs: &testRankSchema,
+	Data: [][]Value{
+		[]Value{"清水", int64(78)},
+		[]Value{"田中", int64(46)},
+		[]Value{"佐藤", int64(33)},
 	},
 }
 
@@ -139,12 +145,15 @@ func TestGetRelation3(t *testing.T) {
 }
 
 func TestJsonSelectionStream(t *testing.T) {
-	schema := Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}}
+	schema := Schema{
+		Attrs: []Attr{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
+		Index: map[string]int{"name": 0, "age": 1, "job": 2},
+	}
 	var want = &Relation{
-		Attrs: schema,
-		Data: []Tuple{
-			Tuple{Attrs: schema, Data: map[string]Value{"name": "田中", "age": int64(34), "job": "デザイナー"}},
-			Tuple{Attrs: schema, Data: map[string]Value{"name": "佐藤", "age": int64(21), "job": "マネージャー"}},
+		Attrs: &schema,
+		Data: [][]Value{
+			[]Value{"田中", int64(34), "デザイナー"},
+			[]Value{"佐藤", int64(21), "マネージャー"},
 		},
 	}
 	const jsonStream = `{ "selection": {
@@ -163,13 +172,16 @@ func TestJsonSelectionStream(t *testing.T) {
 }
 
 func TestJsonProjectionStream(t *testing.T) {
-	schema := Schema{Attr{"age", reflect.Int64}, Attr{"job", reflect.String}}
+	schema := Schema{
+		Attrs: []Attr{Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
+		Index: map[string]int{"age": 0, "job": 1},
+	}
 	var want = &Relation{
-		Attrs: schema,
-		Data: []Tuple{
-			Tuple{Attrs: schema, Data: map[string]Value{"age": int64(17), "job": "エンジニア"}},
-			Tuple{Attrs: schema, Data: map[string]Value{"age": int64(34), "job": "デザイナー"}},
-			Tuple{Attrs: schema, Data: map[string]Value{"age": int64(21), "job": "マネージャー"}},
+		Attrs: &schema,
+		Data: [][]Value{
+			[]Value{int64(17), "エンジニア"},
+			[]Value{int64(34), "デザイナー"},
+			[]Value{int64(21), "マネージャー"},
 		},
 	}
 	const jsonStream = `{ "projection": {

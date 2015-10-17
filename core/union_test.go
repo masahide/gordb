@@ -19,12 +19,15 @@ import (
 */
 
 func TestJsonUnionDecode(t *testing.T) {
-	schema := Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}}
+	schema := Schema{
+		Attrs: []Attr{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
+		Index: map[string]int{"name": 0, "age": 1, "job": 2},
+	}
 	var want = &Relation{
-		Attrs: schema,
-		Data: []Tuple{
-			Tuple{Attrs: schema, Data: map[string]Value{"name": "田中", "age": int64(34), "job": "デザイナー"}},
-			Tuple{Attrs: schema, Data: map[string]Value{"name": "田中", "age": int64(34), "job": "デザイナー"}},
+		Attrs: &schema,
+		Data: [][]Value{
+			[]Value{"田中", int64(34), "デザイナー"},
+			[]Value{"田中", int64(34), "デザイナー"},
 		},
 	}
 

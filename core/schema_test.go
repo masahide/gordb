@@ -19,12 +19,15 @@ func TestJsonMarshalRelation(t *testing.T) {
 				},
 		}
 	*/
-	schema := Schema{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}}
+	schema := Schema{
+		Attrs: []Attr{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
+		Index: map[string]int{"name": 0, "arg": 1, "job": 2},
+	}
 	var r = &Relation{
-		Attrs: schema,
-		Data: []Tuple{
-			Tuple{Attrs: schema, Data: map[string]Value{"name": "田中", "age": int64(34), "job": "デザイナー"}},
-			Tuple{Attrs: schema, Data: map[string]Value{"name": "佐藤", "age": int64(21), "job": "マネージャー"}},
+		Attrs: &schema,
+		Data: [][]Value{
+			[]Value{"田中", int64(34), "デザイナー"},
+			[]Value{"佐藤", int64(21), "マネージャー"},
 		},
 	}
 	b, err := json.Marshal(r)

@@ -1,10 +1,40 @@
 package core
 
+import "sort"
+
 type Relation struct {
-	index int
-	Name  string  `json:"name,omitempty" `
-	Attrs Schema  `json:"attrs"`
-	Data  []Tuple `json:"data"`
+	index       int
+	Name        string    `json:"name,omitempty" `
+	Attrs       *Schema   `json:"attrs"`
+	Data        [][]Value `json:"data"`
+	staticIndex []indexArrays
+}
+
+type indexArray struct {
+	key Value
+	ptr int
+}
+
+type indexArrays []indexArray
+
+func (a indexArrays) Len() int {
+	return len(a)
+}
+func (a indexArrays) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+func (a indexArrays) Less(i, j int) bool {
+	switch {
+	case Compare(a[i].key, a[j].key, LessThan): //a[i].key < a[j].key:
+		return true
+	case Compare(a[i].key, a[j].key, GreaterThan): // a[i].key > a[j].key:
+		return false
+	case a[i].ptr < a[j].ptr:
+		return true
+	case a[i].ptr > a[j].ptr:
+		return false
+	}
+	return false
 }
 
 func (r *Relation) HasNext() bool {
@@ -15,7 +45,10 @@ func (r *Relation) Close() {
 }
 
 func (r *Relation) Next() (*Tuple, error) {
-	tuple := &r.Data[r.index]
+	tuple := &Tuple{
+		Schema: r.Attrs,
+		Data:   r.Data[r.index],
+	}
 	r.index++
 	return tuple, nil
 }
@@ -60,14 +93,22 @@ func (r *Relation) MarshalPHP(o PhpOptions) map[interface{}]interface{} {
 	}
 	switch o.MapKey {
 	case "":
-		for i, tuple := range r.Data {
+		for i, row := range r.Data {
+			tuple := Tuple{
+				Schema: r.Attrs,
+				Data:   row,
+			}
 			res["Data"].(map[interface{}]interface{})[i] = tuple.MarshalPHP(o)
 		}
 	default:
-		for i, tuple := range r.Data {
-			key, ok := tuple.Data[o.MapKey]
+		for i, row := range r.Data {
+			tuple := Tuple{
+				Schema: r.Attrs,
+				Data:   row,
+			}
+			key, ok := tuple.Index[o.MapKey]
 			if ok {
-				res["Data"].(map[interface{}]interface{})[key] = tuple.MarshalPHP(o)
+				res["Data"].(map[interface{}]interface{})[tuple.Data[key]] = tuple.MarshalPHP(o)
 			} else {
 				res["Data"].(map[interface{}]interface{})[i] = tuple.MarshalPHP(o)
 			}
@@ -75,3 +116,60 @@ func (r *Relation) MarshalPHP(o PhpOptions) map[interface{}]interface{} {
 	}
 	return res
 }
+
+func (r *Relation) CreateIndex() {
+	for i, _ := range r.Attrs.Attrs {
+		arry := make(indexArrays, len(r.Data))
+		for j, v := range r.Data[i] {
+			arry[j] = indexArray{key: v, ptr: j}
+		}
+		sort.Sort(arry)
+		r.staticIndex[i] = arry
+	}
+}
+
+/*
+IndexedCSVRelationalStream.prototype.createIndex = function (dataTypes) {
+	var staticIndex = {},
+	i,
+	j,
+	key;
+
+	for (i = 0; i < this.header.length; i++) {
+		var arry = [];
+
+		for (j = 1; j < this.data.length; j++) {
+			switch (dataTypes[i]) {
+			case 'Number':
+				key = Number(this.data[j][i]);
+				break;
+			case 'String':
+				key = this.data[j][i];
+				break;
+			case 'Date':
+				key = new Date(this.data[j][i]).getTime();
+				break;
+			default:
+				throw new TypeError('invalid type is specified');
+				break;
+			}
+			arry.push({
+				key: key,
+				pointer: j
+			});
+		}
+
+		arry = arry.sort(function (a, b) {
+			if (a.key < b.key) return -1;
+			if (a.key > b.key) return 1;
+			if (a.pointer < b.pointer) return -1;
+			if (a.pointer > b.pointer) return 1;
+			return 0;
+		});
+
+		staticIndex[this.header[i]] = arry;
+	}
+
+	this.staticIndex = staticIndex;
+};
+*/

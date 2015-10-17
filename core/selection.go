@@ -19,7 +19,7 @@ func (s *SelectionStream) Next() (*Tuple, error) {
 		return nil, err
 	}
 	if s.inputKind == 0 {
-		s.inputKind = tuple.Attrs.GetKind(s.Attr)
+		s.inputKind = tuple.Schema.GetKind(s.Attr)
 	}
 	result, err := s.Selector(s.inputKind, tuple.Get(s.Attr), s.kind, s.Arg)
 	if err != nil {

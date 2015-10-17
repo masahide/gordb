@@ -10,22 +10,22 @@ func StreamToRelation(s Stream, n *Node) (*Relation, error) {
 		return nil, err
 	}
 	result := &Relation{
-		Attrs: make(Schema, 0, TupleCapacity),
-		Data:  make([]Tuple, 0, RowCapacity),
+		Attrs: NewSchema(),
+		Data:  make([][]Value, 0, RowCapacity),
 	}
-	lastRow := NewTuple()
+	lastTuple := NewTuple()
 	for s.HasNext() {
-		row, err := s.Next()
+		tuple, err := s.Next()
 		if err != nil {
 			return nil, err
 		}
-		if row == nil {
+		if tuple == nil {
 			continue
 		}
-		lastRow = row
-		result.Data = append(result.Data, *row)
+		lastTuple = tuple
+		result.Data = append(result.Data, tuple.Data)
 	}
-	result.Attrs = lastRow.Attrs
+	result.Attrs = lastTuple.Schema
 	s.Close()
 	return result, nil
 }
