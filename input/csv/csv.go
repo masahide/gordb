@@ -50,6 +50,7 @@ func LoadCsv(filename string) (*core.Relation, error) {
 	}
 	original.Name = path.Base(filename)
 	original.Name = strings.TrimRight(original.Name, path.Ext(original.Name))
+	original.CreateIndex()
 	return original, err
 }
 

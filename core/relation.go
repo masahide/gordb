@@ -1,16 +1,19 @@
 package core
 
 import (
+	"encoding/json"
+	"fmt"
 	"reflect"
 	"sort"
 )
 
 type Relation struct {
-	index       int
-	Name        string    `json:"name,omitempty" `
-	Attrs       *Schema   `json:"attrs"`
-	Data        [][]Value `json:"data"`
-	staticIndex []indexArrays
+	index             int
+	Name              string    `json:"name,omitempty" `
+	Attrs             *Schema   `json:"attrs"`
+	Data              [][]Value `json:"data"`
+	staticIndex       []indexArrays
+	indexSearchResult []int
 }
 
 type indexArray struct {
@@ -187,7 +190,7 @@ func (r *Relation) multiSearch(attr string, key Value, kind reflect.Kind) []int 
 
 }
 
-func (r *Relation) SearchGreaterThan(attr string, key Value, include bool, kind reflect.Kind) []int {
+func (r *Relation) searchGreaterThan(attr string, key Value, include bool, kind reflect.Kind) []int {
 	result := []int{}
 	i, ok := r.Attrs.Index[attr]
 	if !ok {
@@ -218,6 +221,7 @@ func (r *Relation) SearchGreaterThan(attr string, key Value, include bool, kind 
 			if head > tail {
 				if head < len(arry) {
 					from = r.findSameValueInDesc(attr, head, arry[head].key)
+					break
 				}
 			}
 		}
@@ -230,59 +234,93 @@ func (r *Relation) SearchGreaterThan(attr string, key Value, include bool, kind 
 	return result
 
 }
-
-/* IndexedCSVRelationalStream.prototype.binarySearchGreaterThan = function (attribute, key, includeMinValue, comparator) {
-	var arry = this.staticIndex[attribute],
-	head = 0,
-	tail = arry.length - 1,
-	mid,
-	comp,
-	i,
-	from,
-	result = [];
-
-	if (comparator === undefined) {
-		comparator = function (a, b) {
-			if (a < b) return -1;
-			if (a > b) return 1;
-			return 0;
-		};
+func (r *Relation) searchLessThan(attr string, key Value, include bool, kind reflect.Kind) []int {
+	result := []int{}
+	i, ok := r.Attrs.Index[attr]
+	if !ok {
+		return result
 	}
-
-	if (comparator(arry[head].key, key) > 0) {
-		from = head;
-	} else if (comparator(arry[tail].key, key) < 0) {
-		from = -1;
+	arry := r.staticIndex[i]
+	tail := len(arry) - 1
+	head := 0
+	to := 0
+	if ok, _ := LessThan(kind, arry[tail].key, kind, key); ok {
+		to = tail
+	} else if ok, _ := GreaterThan(kind, arry[head].key, kind, key); ok {
+		to = -1
 	} else {
-		while (head <= tail) {
-			mid = head + Math.floor((tail - head) / 2);
-			comp = comparator(arry[mid].key, key);
-			if (comp == 0) {
-				if (includeMinValue == true) {
-					from = this.findSameValueInDescendingOrder(attribute, mid, key);
-					break;
-				}
-				head = mid + 1;
-			} else if (comp > 0) {
-				tail = mid - 1;
+		for head <= tail {
+			mid := head + ((tail - head) / 2)
+			if ok, _ := GreaterThan(kind, arry[mid].key, kind, key); ok {
+				tail = mid - 1
+			} else if ok, _ := LessThan(kind, arry[mid].key, kind, key); ok {
+				head = mid + 1
 			} else {
-				head = mid + 1;
+				if include {
+					to = r.findSameValueInAsc(attr, mid, key)
+					break
+				}
+				tail = mid - 1
 			}
-
-			if (head > tail) {
-				if (arry[head]) {
-					from = this.findSameValueInDescendingOrder(attribute, head, arry[head].key);
-					break;
+			if head > tail {
+				if head < len(arry) {
+					to = r.findSameValueInAsc(attr, tail, arry[tail].key)
+					break
 				}
 			}
 		}
 	}
+	result = make([]int, len(arry))
+	for i := 0; i <= to; i++ {
+		result = append(result, arry[i].ptr)
+	}
+	return result
+}
 
-	for (i = from; i > -1 && i < arry.length; i++) {
-		result.push(arry[i].pointer);
+func SearchLessThan(r *Relation, attr string, key Value, kind reflect.Kind) []int {
+	return r.searchLessThan(attr, key, false, kind)
+}
+func SearchNotGreaterThan(r *Relation, attr string, key Value, kind reflect.Kind) []int {
+	return r.searchLessThan(attr, key, true, kind)
+}
+func SearchGreaterThan(r *Relation, attr string, key Value, kind reflect.Kind) []int {
+	return r.searchGreaterThan(attr, key, false, kind)
+}
+func SearchNotLessThan(r *Relation, attr string, key Value, kind reflect.Kind) []int {
+	return r.searchGreaterThan(attr, key, true, kind)
+}
+func SearchMulti(r *Relation, attr string, key Value, kind reflect.Kind) []int {
+	return r.multiSearch(attr, key, kind)
+}
+
+/*
+	">":  GreaterThan,
+	">=": NotLessThan,
+	"<":  LessThan,
+	"<=": NotGreaterThan,
+	"==": Equal,
+	"!=": NotEqual,
+*/
+type IndexedOperator func(*Relation, string, Value, reflect.Kind) []int
+
+func (ss *IndexedOperator) UnmarshalJSON(data []byte) error {
+	// Extract the string from data.
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("IndexedOperator should be a string, got %s", data)
 	}
 
-	return result;
-};
-
-*/
+	// The rest is equivalen to Operator.
+	got, ok := map[string]IndexedOperator{
+		">":  SearchGreaterThan,
+		">=": SearchNotLessThan,
+		"<":  SearchLessThan,
+		"<=": SearchNotGreaterThan,
+		"==": SearchMulti,
+	}[s]
+	if !ok {
+		return fmt.Errorf("invalid IndexedOperator %q", s)
+	}
+	*ss = got
+	return nil
+}
