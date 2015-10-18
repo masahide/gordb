@@ -211,8 +211,11 @@ var testStaff2 = &Relation{
 	},
 }
 
-func TestCreateIndex(t *testing.T) {
+func init() {
 	testStaff2.CreateIndex()
+}
+
+func TestCreateIndex(t *testing.T) {
 	want := []indexArrays{
 		indexArrays{
 			indexArray{key: "佐藤", ptr: 1},
@@ -238,5 +241,105 @@ func TestCreateIndex(t *testing.T) {
 	}
 	if !reflect.DeepEqual(testStaff2.staticIndex, want) {
 		t.Errorf("Does not match \nstaticIndex:%v,\n       want:%v", testStaff2.staticIndex, want)
+	}
+}
+func TestFindSameValueInDesc(t *testing.T) {
+	res := testStaff2.findSameValueInDesc("hoge", 0, 0)
+	if res != 0 {
+		t.Errorf("res != 0 res:%v", res)
+	}
+	res = testStaff2.findSameValueInDesc("name", 0, "佐藤")
+	if res != 0 {
+		t.Errorf("res != 0 res:%v", res)
+	}
+	res = testStaff2.findSameValueInDesc("name", 3, "清水")
+	if res != 3 {
+		t.Errorf("res != 3 res:%v", res)
+	}
+	res = testStaff2.findSameValueInDesc("name", 4, "田中1")
+	if res != 5 {
+		t.Errorf("res != 5 res:%v", res)
+	}
+
+}
+func TestFindSameValueInAsc(t *testing.T) {
+	res := testStaff2.findSameValueInAsc("hoge", 0, 0)
+	if res != 0 {
+		t.Error("res != 0")
+	}
+	res = testStaff2.findSameValueInAsc("name", 0, "佐藤")
+	if res != 2 {
+		t.Errorf("res != 2 res:%v", res)
+	}
+	res = testStaff2.findSameValueInAsc("name", 3, "清水")
+	if res != 3 {
+		t.Errorf("res != 3 res:%v", res)
+	}
+	res = testStaff2.findSameValueInAsc("name", 4, "田中1")
+	if res != 3 {
+		t.Errorf("res != 3 res:%v", res)
+	}
+
+}
+
+func TestSearchLessThan(t *testing.T) {
+	var want []int
+	want = []int{0, 3, 2, 4, 1}
+	res := SearchLessThan(testStaff2, "age", int64(100), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{0, 3}
+	res = SearchLessThan(testStaff2, "age", int64(34), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{0, 3, 2, 4, 1}
+	res = SearchNotGreaterThan(testStaff2, "age", int64(100), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{0, 3, 2, 4, 1}
+	res = SearchNotGreaterThan(testStaff2, "age", int64(35), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{}
+	res = SearchNotGreaterThan(testStaff2, "age", int64(1), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+}
+func TestSearchGreaterThan(t *testing.T) {
+	var want []int
+	want = []int{}
+	res := SearchGreaterThan(testStaff2, "age", int64(100), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{1}
+	res = SearchGreaterThan(testStaff2, "age", int64(34), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{2, 4, 1}
+	res = SearchGreaterThan(testStaff2, "age", int64(33), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{2, 4, 1}
+	res = SearchNotLessThan(testStaff2, "age", int64(34), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{0, 3, 2, 4, 1}
+	res = SearchNotLessThan(testStaff2, "age", int64(1), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{}
+	res = SearchNotLessThan(testStaff2, "age", int64(36), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
 	}
 }

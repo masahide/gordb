@@ -4,19 +4,22 @@ import "errors"
 
 type Stream struct {
 	stream
-	Relation   *Relation         `json:"relation"`
-	Selection  *SelectionStream  `json:"selection"`
-	Projection *ProjectionStream `json:"projection"`
-	Rename     *RenameStream     `json:"rename"`
-	Union      *UnionStream      `json:"union"`
-	Join       *JoinStream       `json:"join"`
-	CrossJoin  *CrossJoinStream  `json:"crossjoin"`
+	Relation         *Relation               `json:"relation"`
+	IndexedSelection *IndexedSelectionStream `json:"iselection"`
+	Selection        *SelectionStream        `json:"selection"`
+	Projection       *ProjectionStream       `json:"projection"`
+	Rename           *RenameStream           `json:"rename"`
+	Union            *UnionStream            `json:"union"`
+	Join             *JoinStream             `json:"join"`
+	CrossJoin        *CrossJoinStream        `json:"crossjoin"`
 }
+
+var ErrUnkownStreamType = errors.New("unkown stream type")
 
 func (s *Stream) Init(n *Node) error {
 	c := s.getStream()
 	if c == nil {
-		return errors.New("unkown stream type")
+		return ErrUnkownStreamType
 	}
 	return c.Init(n)
 }
@@ -30,6 +33,8 @@ func (s *Stream) getStream() stream {
 		s.stream = s.Relation
 	case s.Selection != nil:
 		s.stream = s.Selection
+	case s.IndexedSelection != nil:
+		s.stream = s.IndexedSelection
 	case s.Projection != nil:
 		s.stream = s.Projection
 	case s.Rename != nil:
