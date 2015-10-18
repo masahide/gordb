@@ -14,10 +14,12 @@ type Stream struct {
 	CrossJoin        *CrossJoinStream        `json:"crossjoin"`
 }
 
+var ErrUnkownStreamType = errors.New("unkown stream type")
+
 func (s *Stream) Init(n *Node) error {
 	c := s.getStream()
 	if c == nil {
-		return errors.New("unkown stream type")
+		return ErrUnkownStreamType
 	}
 	return c.Init(n)
 }

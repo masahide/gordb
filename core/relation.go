@@ -8,12 +8,11 @@ import (
 )
 
 type Relation struct {
-	index             int
-	Name              string    `json:"name,omitempty" `
-	Attrs             *Schema   `json:"attrs"`
-	Data              [][]Value `json:"data"`
-	staticIndex       []indexArrays
-	indexSearchResult []int
+	index       int
+	Name        string    `json:"name,omitempty" `
+	Attrs       *Schema   `json:"attrs"`
+	Data        [][]Value `json:"data"`
+	staticIndex []indexArrays
 }
 
 type indexArray struct {
@@ -199,12 +198,11 @@ func (r *Relation) searchGreaterThan(attr string, key Value, include bool, kind 
 	arry := r.staticIndex[i]
 	tail := len(arry) - 1
 	head := 0
-	from := 0
-	if ok, _ := GreaterThan(kind, arry[head].key, kind, key); ok {
-		from = head
-	} else if ok, _ := LessThan(kind, arry[tail].key, kind, key); ok {
-		from = -1
-	} else {
+	from := head
+	if ok, err := LessThan(kind, arry[tail].key, kind, key); ok || err != nil {
+		return result
+	}
+	if ok, _ := GreaterThan(kind, arry[head].key, kind, key); !ok {
 		for head <= tail {
 			mid := head + ((tail - head) / 2)
 			if ok, _ := GreaterThan(kind, arry[mid].key, kind, key); ok {
@@ -219,16 +217,16 @@ func (r *Relation) searchGreaterThan(attr string, key Value, include bool, kind 
 				head = mid + 1
 			}
 			if head > tail {
-				if head < len(arry) {
+				if head < len(arry) && head >= 0 {
 					from = r.findSameValueInDesc(attr, head, arry[head].key)
 					break
 				}
 			}
 		}
 	}
-	result = make([]int, len(arry))
-	for i := from; i > -1 && i < len(arry); i++ {
-		result = append(result, arry[i].ptr)
+	result = make([]int, len(arry)-from)
+	for i := from; i < len(arry); i++ {
+		result[i-from] = arry[i].ptr
 	}
 
 	return result
@@ -243,12 +241,11 @@ func (r *Relation) searchLessThan(attr string, key Value, include bool, kind ref
 	arry := r.staticIndex[i]
 	tail := len(arry) - 1
 	head := 0
-	to := 0
-	if ok, _ := LessThan(kind, arry[tail].key, kind, key); ok {
-		to = tail
-	} else if ok, _ := GreaterThan(kind, arry[head].key, kind, key); ok {
-		to = -1
-	} else {
+	to := tail
+	if ok, err := GreaterThan(kind, arry[head].key, kind, key); ok || err != nil {
+		return result
+	}
+	if ok, _ := LessThan(kind, arry[tail].key, kind, key); !ok {
 		for head <= tail {
 			mid := head + ((tail - head) / 2)
 			if ok, _ := GreaterThan(kind, arry[mid].key, kind, key); ok {
@@ -263,16 +260,16 @@ func (r *Relation) searchLessThan(attr string, key Value, include bool, kind ref
 				tail = mid - 1
 			}
 			if head > tail {
-				if head < len(arry) {
+				if tail < len(arry) && tail >= 0 {
 					to = r.findSameValueInAsc(attr, tail, arry[tail].key)
 					break
 				}
 			}
 		}
 	}
-	result = make([]int, len(arry))
+	result = make([]int, to+1)
 	for i := 0; i <= to; i++ {
-		result = append(result, arry[i].ptr)
+		result[i] = arry[i].ptr
 	}
 	return result
 }

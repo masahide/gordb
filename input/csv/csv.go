@@ -16,9 +16,11 @@ import (
 
 const inferenceRowSize = 10000
 
+var ErrSchemaNil = errors.New("attrs is nil.")
+
 func recordToData(attrs *core.Schema, records [][]string) ([][]core.Value, error) {
 	if attrs == nil {
-		return nil, errors.New("attrs is nil.")
+		return nil, ErrSchemaNil
 	}
 	result := make([][]core.Value, len(records))
 	for i, row := range records {
