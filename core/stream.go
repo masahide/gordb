@@ -45,8 +45,6 @@ func (s *Stream) getStream() stream {
 		s.stream = s.Join
 	case s.CrossJoin != nil:
 		s.stream = s.CrossJoin
-	default:
-		return nil
 	}
 	return s.stream
 }

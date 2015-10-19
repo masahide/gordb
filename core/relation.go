@@ -74,6 +74,7 @@ func (r *Relation) Init(root *Node) error {
 	}
 	r.Attrs = rel.Attrs
 	r.Data = rel.Data
+	r.staticIndex = rel.staticIndex
 	return nil
 }
 

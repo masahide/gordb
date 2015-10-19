@@ -1,7 +1,11 @@
 // go-rdb
 package core
 
-import "reflect"
+import (
+	"reflect"
+
+	"github.com/k0kubun/pp"
+)
 
 // Selection
 type IndexedSelectionStream struct {
@@ -15,16 +19,17 @@ type IndexedSelectionStream struct {
 }
 
 func (s *IndexedSelectionStream) Next() (*Tuple, error) {
+	pp.Print(s.indexSearchResult)
 	ptr := s.indexSearchResult[s.index]
 	tuple := &Tuple{
 		Schema: s.Input.Attrs,
 		Data:   s.Input.Data[ptr],
 	}
-	s.Input.index++
+	s.index++
 	return tuple, nil
 }
 func (s *IndexedSelectionStream) HasNext() bool {
-	return s.Input.index < len(s.indexSearchResult)
+	return s.index < len(s.indexSearchResult)
 }
 
 func (s *IndexedSelectionStream) Init(n *Node) error {
@@ -58,9 +63,13 @@ func (s *IndexedSelectionStream) Init(n *Node) error {
 		return ErrDifferentType
 	}
 	s.indexSearchResult = s.Selector(s.Input, s.Attr, s.Arg, kind)
+	//pp.Print(s.Input)
+	//pp.Print(s.indexSearchResult)
 	return nil
 }
 
 func (s *IndexedSelectionStream) Close() {
+	s.index = 0
+	s.indexSearchResult = nil
 	s.Input.Close()
 }

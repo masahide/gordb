@@ -75,6 +75,8 @@ var testData1 = &Node{
 var testData2 = NewNode("root")
 
 func init() {
+	testStaff.CreateIndex()
+	testRank.CreateIndex()
 	err := testData2.SetRelations("test", Relations{"staff1": testStaff, "rank1": testRank})
 	if err != nil {
 		log.Fatalln(err)
