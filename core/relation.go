@@ -178,7 +178,7 @@ func (r *Relation) multiSearch(attr string, key Value, kind reflect.Kind) []int 
 		} else {
 			from := r.findSameValueInDesc(attr, mid, key)
 			to := r.findSameValueInAsc(attr, mid, key)
-			result = make([]int, to-from)
+			result = make([]int, to-from+1)
 			for i := 0; i <= to-from; i++ {
 				result[i] = arry[from+i].ptr
 			}

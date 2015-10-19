@@ -196,6 +196,32 @@ func TestJsonProjectionStream(t *testing.T) {
 	if !reflect.DeepEqual(result, want) {
 		t.Errorf("Does not match 'SELECT age,job FROM Staff'\nresult:% #v,\n want:% #v", result, want)
 	}
+	php := result.MarshalPHP(PhpOptions{KvFmt: true, MapKey: "age"})
+	phpwant := map[interface{}]interface{}{
+		"Name":  "",
+		"Attrs": map[interface{}]interface{}{0: "age", 1: "job"},
+		"Data": map[interface{}]interface{}{
+			int64(34): map[interface{}]interface{}{"age": int64(34), "job": "デザイナー"},
+			int64(21): map[interface{}]interface{}{"age": int64(21), "job": "マネージャー"},
+			int64(17): map[interface{}]interface{}{"age": int64(17), "job": "エンジニア"},
+		},
+	}
+	if !reflect.DeepEqual(php, phpwant) {
+		t.Errorf("Does not match php:%#v,\n wantphp:%#v", php, phpwant)
+	}
+	php2 := result.MarshalPHP(PhpOptions{})
+	phpwant2 := map[interface{}]interface{}{
+		"Name":  "",
+		"Attrs": map[interface{}]interface{}{0: "age", 1: "job"},
+		"Data": map[interface{}]interface{}{
+			0: map[interface{}]interface{}{0: int64(17), 1: "エンジニア"},
+			1: map[interface{}]interface{}{0: int64(34), 1: "デザイナー"},
+			2: map[interface{}]interface{}{0: int64(21), 1: "マネージャー"},
+		},
+	}
+	if !reflect.DeepEqual(php2, phpwant2) {
+		t.Errorf("Does not match php:%#v,\n wantphp:%#v", php2, phpwant2)
+	}
 }
 
 var testStaff2 = &Relation{
@@ -289,6 +315,41 @@ func TestSearchLessThan(t *testing.T) {
 	if !reflect.DeepEqual(res, want) {
 		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
 	}
+	want = []int{}
+	res = SearchLessThan(testStaff2, "age", int64(16), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{0, 3, 2, 4, 1}
+	res = SearchLessThan(testStaff2, "age", int64(17), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{0}
+	res = SearchLessThan(testStaff2, "age", int64(18), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{0}
+	res = SearchLessThan(testStaff2, "age", int64(20), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{0}
+	res = SearchLessThan(testStaff2, "age", int64(20), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{0}
+	res = SearchLessThan(testStaff2, "age", int64(21), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{0, 3}
+	res = SearchLessThan(testStaff2, "age", int64(22), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
 	want = []int{0, 3}
 	res = SearchLessThan(testStaff2, "age", int64(34), reflect.Int64)
 	if !reflect.DeepEqual(res, want) {
@@ -339,6 +400,26 @@ func TestSearchGreaterThan(t *testing.T) {
 	}
 	want = []int{}
 	res = SearchNotLessThan(testStaff2, "age", int64(36), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{}
+	res = SearchMulti(testStaff2, "age", int64(1), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{2, 4}
+	res = SearchMulti(testStaff2, "age", int64(34), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{1}
+	res = SearchMulti(testStaff2, "age", int64(35), reflect.Int64)
+	if !reflect.DeepEqual(res, want) {
+		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
+	}
+	want = []int{}
+	res = SearchMulti(testStaff2, "age", int64(36), reflect.Int64)
 	if !reflect.DeepEqual(res, want) {
 		t.Errorf("Does not match \nres:%v,\n       want:%v", res, want)
 	}
