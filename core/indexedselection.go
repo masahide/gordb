@@ -1,11 +1,7 @@
 // go-rdb
 package core
 
-import (
-	"reflect"
-
-	"github.com/k0kubun/pp"
-)
+import "reflect"
 
 // Selection
 type IndexedSelectionStream struct {
@@ -19,7 +15,6 @@ type IndexedSelectionStream struct {
 }
 
 func (s *IndexedSelectionStream) Next() (*Tuple, error) {
-	pp.Print(s.indexSearchResult)
 	ptr := s.indexSearchResult[s.index]
 	tuple := &Tuple{
 		Schema: s.Input.Attrs,
@@ -63,8 +58,6 @@ func (s *IndexedSelectionStream) Init(n *Node) error {
 		return ErrDifferentType
 	}
 	s.indexSearchResult = s.Selector(s.Input, s.Attr, s.Arg, kind)
-	//pp.Print(s.Input)
-	//pp.Print(s.indexSearchResult)
 	return nil
 }
 

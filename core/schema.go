@@ -38,6 +38,7 @@ func (s Schema) GetKind(name string) reflect.Kind {
 	return s.Attrs[i].Kind
 }
 
+/*
 func (s Schema) Add(attr Attr) int {
 	if i, ok := s.Index[attr.Name]; !ok {
 		return i
@@ -47,6 +48,7 @@ func (s Schema) Add(attr Attr) int {
 	s.Index[attr.Name] = i
 	return i
 }
+*/
 
 type PhpSchema map[interface{}]interface{}
 

@@ -44,7 +44,10 @@ func recordToData(attrs *core.Schema, records [][]string) ([][]core.Value, error
 }
 
 func LoadCsv(filename string) (*core.Relation, error) {
-	f := fopen(filename)
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
 	defer f.Close()
 	original, err := NewCSVRelationalStream(f)
 	if err != nil {
@@ -54,14 +57,6 @@ func LoadCsv(filename string) (*core.Relation, error) {
 	original.Name = strings.TrimRight(original.Name, path.Ext(original.Name))
 	original.CreateIndex()
 	return original, err
-}
-
-func fopen(fn string) *os.File {
-	f, err := os.Open(fn)
-	if err != nil {
-		panic(err)
-	}
-	return f
 }
 
 // CSVRelational

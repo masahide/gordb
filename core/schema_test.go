@@ -38,3 +38,11 @@ func TestJsonMarshalRelation(t *testing.T) {
 		t.Errorf("Does not match '\nresult:%s,\n want:%s", b, want)
 	}
 }
+
+func TestGetKind(t *testing.T) {
+	s := Schema{}
+	res := s.GetKind("hoge")
+	if res != 0 {
+		t.Error("res != 0")
+	}
+}
