@@ -55,20 +55,3 @@ func TestSearchDir(t *testing.T) {
 	}
 
 }
-
-func TestinferenceType(t *testing.T) {
-	if s, err := inferenceType(""); err != nil {
-		t.Error(err)
-	} else if s != 0 {
-		t.Errorf("s !=0 s:%s", s)
-	}
-	if s, _ := inferenceType("string"); s != reflect.String {
-		t.Errorf("s :%s", s)
-	}
-	if s, _ := inferenceType("1"); s != reflect.Int64 {
-		t.Errorf("s :%s", s)
-	}
-	if s, _ := inferenceType("0.1"); s != reflect.Float64 {
-		t.Errorf("s :%s", s)
-	}
-}

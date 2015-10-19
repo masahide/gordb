@@ -36,3 +36,32 @@ func TestJsonIndexedSelectionStream(t *testing.T) {
 		t.Errorf("Does not match 'SELECT * FROM Staff WHERE age > 20'\nresult:% #v,\n want:% #v", result, want)
 	}
 }
+
+func TestIndexedSelectionInit(t *testing.T) {
+	s := &IndexedSelectionStream{Arg: int(1), Input: &Relation{}}
+	err := s.Init(&Node{})
+	if err == nil {
+		t.Error("err == nil")
+	}
+	s = &IndexedSelectionStream{Arg: int64(1), Input: &Relation{}}
+	err = s.Init(&Node{})
+	if err == nil {
+		t.Error("err == nil")
+	}
+	s = &IndexedSelectionStream{Arg: "hoge", Input: &Relation{}}
+	err = s.Init(&Node{})
+	if err == nil {
+		t.Error("err == nil")
+	}
+
+	s = &IndexedSelectionStream{Arg: true, Input: &Relation{}}
+	err = s.Init(&Node{})
+	if err == nil {
+		t.Error("err == nil")
+	}
+	s = &IndexedSelectionStream{Arg: false, Input: &Relation{}}
+	err = s.Init(&Node{})
+	if err == nil {
+		t.Error("err == nil")
+	}
+}
