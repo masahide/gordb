@@ -20,12 +20,12 @@ $ curl -X POST localhost:3050/json/dir2 -d '
    {
     "stream": {
       "union": {
-        "input1": {"selection": {
-          "input": { "relation": { "name": "staff" } },
+        "input1": {"iselection": {
+          "input": { "name": "staff" },
           "attr": "age",  "selector": ">=", "arg": 31
         }},
-        "input2": {"selection": {
-          "input": { "relation": { "name": "staff" } },
+        "input2": {"iselection": {
+          "input": { "name": "staff" },
           "attr": "name", "selector": "==", "arg": "山田"
         }}
       }
@@ -33,8 +33,8 @@ $ curl -X POST localhost:3050/json/dir2 -d '
   },
   {
     "stream": {
-      "selection": {
-        "input": { "relation": { "name": "rank" } },
+      "iselection": {
+        "input": { "name": "rank" },
         "attr": "rank",  "selector": ">=", "arg": 1
       }
     }
@@ -57,12 +57,12 @@ $ curl -X POST localhost:3050/php/dir2 -d '
     "options": { "kv": true, "map_key": "name" },
     "stream": {
       "union": {
-        "input1": {"selection": {
-          "input": { "relation": { "name": "staff" } },
+        "input1": {"iselection": {
+          "input": { "name": "staff" },
           "attr": "age",  "selector": ">=", "arg": 31
         }},
-        "input2": {"selection": {
-          "input": { "relation": { "name": "staff" } },
+        "input2": {"iselection": {
+          "input": { "name": "staff" },
           "attr": "name", "selector": "==", "arg": "山田"
         }}
       }
@@ -71,8 +71,8 @@ $ curl -X POST localhost:3050/php/dir2 -d '
   {
     "options": { "kv": true, "map_key": "name" },
     "stream": {
-      "selection": {
-        "input": { "relation": { "name": "rank" } },
+      "iselection": {
+        "input": { "name": "rank" },
         "attr": "rank",  "selector": ">=", "arg": 1
       }
     }
