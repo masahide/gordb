@@ -50,7 +50,7 @@ result:
 [{"attrs":["name","age","job"],"data":[["田中",34,"デザイナー"]]},{"attrs":["name","rank"],"data":[["清水",78],["田中",46],["佐藤",33]]}]
 ```
 
-#### php
+#### php serialize
 
 ```
 $ curl -X POST localhost:3050/php/dir2 -d '
