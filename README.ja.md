@@ -3,14 +3,14 @@
 
 ## streamに指定できる関数の種類
 
-* selection  行の選択
-* projection 列の選択
-* rename 列名の変更
-* union 行の結合
-* join 列の結合
-* crossjoin すべて列の組み合わせ
-* relation  表そのもの(メモリに読み込まれたcsv)
-* iselection  行の選択(full-index版)
+* selection  (行の選択)
+* projection (列の選択)
+* rename (列名の変更)
+* union (行の結合)
+* join (列の結合)
+* crossjoin (すべて列の組み合わせ)
+* relation  (表そのもの(メモリに読み込まれたcsv)
+* iselection  (行の選択 full-index版)
 
 ## 関数
 
