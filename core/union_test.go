@@ -8,16 +8,6 @@ import (
 	"testing"
 )
 
-/*
-	"selection": {
-		"input": { "union":{
-				"input1":{"relation": {"name": "test/staff1"}},
-				"input2":{"relation": {"name": "test/rank1"}}
-		}},
-		"attr": "name", "selector": ">", "arg": 0
-	}
-*/
-
 func TestJsonUnionDecode(t *testing.T) {
 	schema := Schema{
 		Attrs: []Attr{Attr{"name", reflect.String}, Attr{"age", reflect.Int64}, Attr{"job", reflect.String}},
@@ -35,8 +25,7 @@ func TestJsonUnionDecode(t *testing.T) {
 		"selection": {
 			"input": { 
 				"union":{
-					"input1":{"relation": {"name": "test/staff1"}},
-					"input2":{"relation": {"name": "test/staff1"}}
+					"inputs":[{"relation": {"name": "test/staff1"}}, {"relation": {"name": "test/staff1"}}]
 				}
 			},	
 			"attr": "name", "selector": "==", "arg": "田中"

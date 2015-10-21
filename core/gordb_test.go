@@ -156,7 +156,19 @@ func TestCrossJoinStream(t *testing.T) {
 		*/
 	}
 	stream3 := &CrossJoinStream{
-		Inputs: []Stream{Stream{Relation: &Relation{Name: "test/staff1"}}, []Stream{Stream{Rename: &RenameStream{Stream{Relation: &Relation{Name: "test/rank1"}}}, "name", "name2"}}}
+		Inputs: []Stream{
+			Stream{Relation: &Relation{Name: "test/staff1"}},
+			Stream{
+				Rename: &RenameStream{
+					Input: Stream{
+						Relation: &Relation{Name: "test/rank1"},
+					},
+					Attr: "name",
+					Name: "name2",
+				},
+			},
+		},
+	}
 	result, _ := StreamToRelation(Stream{CrossJoin: stream3}, testData2)
 	if !reflect.DeepEqual(result, want) {
 		t.Errorf("Does not match 'SELECT * FROM Staff CROSS JOIN Rank' result:% #v", result)
@@ -173,13 +185,12 @@ func TestEmpty(t *testing.T) {
 		Selection: &SelectionStream{
 			Input: Stream{
 				CrossJoin: &CrossJoinStream{
-					Inputs: []Stream{ 
-						Stream{Relation: &Relation{Name: "test/staff1"}}
-						Rename: &RenameStream{
+					Inputs: []Stream{
+						Stream{Relation: &Relation{Name: "test/staff1"}},
+						Stream{Rename: &RenameStream{
 							Stream{Relation: &Relation{Name: "test/rank1"}},
 							"name", "name2"},
-					},
-					Input2: Stream{
+						},
 					},
 				},
 			},

@@ -19,28 +19,30 @@ go build -ldflags "-X main.version=$(git describe)"
 ```
 $ curl -X POST localhost:3050/json/dir2 -d '
 [
-   {
-    "stream": {
-      "union": {
-        "input1": {"iselection": {
-          "input": { "name": "staff" },
-          "attr": "age",  "selector": ">=", "arg": 31
-        }},
-        "input2": {"iselection": {
-          "input": { "name": "staff" },
-          "attr": "name", "selector": "==", "arg": "山田"
-        }}
-      }
-    }
-  },
-  {
-    "stream": {
-      "iselection": {
-        "input": { "name": "rank" },
-        "attr": "rank",  "selector": ">=", "arg": 1
-      }
-    }
-  }
+{
+	"stream": {
+		"union": {
+			"inputs": [
+			{"iselection": {
+							   "input": { "name": "staff" },
+								   "attr": "age",  "selector": ">=", "arg": 31
+						   }},
+			{"iselection": {
+							   "input": { "name": "staff" },
+							   "attr": "name", "selector": "==", "arg": "山田"
+						   }}
+			]
+		}
+	}
+},
+{
+	"stream": {
+		"iselection": {
+			"input": { "name": "rank" },
+			"attr": "rank",  "selector": ">=", "arg": 1
+		}
+	}
+}
 ]
 '
 ```
@@ -55,30 +57,32 @@ result:
 ```
 $ curl -X POST localhost:3050/php/dir2 -d '
 [
-   {
-    "options": { "kv": true, "map_key": "name" },
-    "stream": {
-      "union": {
-        "input1": {"iselection": {
-          "input": { "name": "staff" },
-          "attr": "age",  "selector": ">=", "arg": 31
-        }},
-        "input2": {"iselection": {
-          "input": { "name": "staff" },
-          "attr": "name", "selector": "==", "arg": "山田"
-        }}
-      }
-    }
-  },
-  {
-    "options": { "kv": true, "map_key": "name" },
-    "stream": {
-      "iselection": {
-        "input": { "name": "rank" },
-        "attr": "rank",  "selector": ">=", "arg": 1
-      }
-    }
-  }
+{
+	"options": { "kv": true, "map_key": "name" },
+		"stream": {
+			"union": {
+				"inputs": [
+				{"iselection": {
+								   "input": { "name": "staff" },
+								   "attr": "age",  "selector": ">=", "arg": 31
+							   }},
+				{"iselection": {
+								   "input": { "name": "staff" },
+								   "attr": "name", "selector": "==", "arg": "山田"
+							   }}
+				]
+			}
+		}
+},
+{
+	"options": { "kv": true, "map_key": "name" },
+	"stream": {
+		"iselection": {
+			"input": { "name": "rank" },
+			"attr": "rank",  "selector": ">=", "arg": 1
+		}
+	}
+}
 ]
 '
 ```
