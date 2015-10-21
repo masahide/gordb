@@ -4,16 +4,18 @@
 $body = '[
 	{
 		"options": { "kv": true, "map_key": "name" }, 
-		"stream": {
-			"union": {
-				"input1": {"selection": {
-					"input": { "relation": { "name": "staff" } },
-						"attr": "age",  "selector": ">=", "arg": 31
-				}},
-					"input2": {"selection": {
-						"input": { "relation": { "name": "staff" } },
-						"attr": "name", "selector": "==", "arg": "山田"
-					}}
+			"stream": {
+				"union": {
+					"inputs": [ 
+					{"selection": {
+									  "input": { "relation": { "name": "staff" } },
+									  "attr": "age",  "selector": ">=", "arg": 31
+								  }},
+					{"selection": {
+									  "input": { "relation": { "name": "staff" } },
+									  "attr": "name", "selector": "==", "arg": "山田"
+								  }}
+					]
 			}
 		}
 	},

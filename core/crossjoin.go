@@ -3,9 +3,7 @@ package core
 
 // CrossJoin
 type CrossJoinStream struct {
-	Input1 Stream `json:"input1"`
-	Input2 Stream `json:"input2"`
-
+	Inputs       []Stream `json:"inputs"`
 	index        int
 	tuples       []*Tuple
 	currentTuple *Tuple
@@ -18,8 +16,8 @@ func (s *CrossJoinStream) Next() (*Tuple, error) {
 		s.currentTuple = nil
 	}
 	if s.currentTuple == nil {
-		if s.Input1.HasNext() {
-			s.currentTuple, err = s.Input1.Next()
+		if s.Inputs[0].HasNext() {
+			s.currentTuple, err = s.Inputs[0].Next()
 		}
 		if s.currentTuple == nil || err != nil {
 			return nil, err
@@ -40,8 +38,8 @@ func (s *CrossJoinStream) Next() (*Tuple, error) {
 func (s *CrossJoinStream) HasNext() bool {
 	if s.tuples == nil {
 		s.tuples = make([]*Tuple, 0, TupleCapacity)
-		for s.Input2.HasNext() {
-			next, err := s.Input2.Next()
+		for s.Inputs[1].HasNext() {
+			next, err := s.Inputs[1].Next()
 			if err != nil {
 				continue
 			}
@@ -51,15 +49,18 @@ func (s *CrossJoinStream) HasNext() bool {
 	if len(s.tuples) > s.index {
 		return true
 	}
-	return s.Input1.HasNext()
+	return s.Inputs[0].HasNext()
 }
 func (s *CrossJoinStream) Init(n *Node) error {
-	if err := s.Input1.Init(n); err != nil {
+	if len(s.Inputs) != 2 {
+		return ErrUnexpectedInputNumber
+	}
+	if err := s.Inputs[0].Init(n); err != nil {
 		return err
 	}
-	return s.Input2.Init(n)
+	return s.Inputs[1].Init(n)
 }
 func (s *CrossJoinStream) Close() {
-	s.Input1.Close()
-	s.Input2.Close()
+	s.Inputs[0].Close()
+	s.Inputs[1].Close()
 }

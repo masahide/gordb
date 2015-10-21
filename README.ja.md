@@ -18,10 +18,10 @@
 
 <pre><code class="json">
 "selection": {
-	"input":       対象ストリーム,
-	"attr":        比較カラム名,
-	"selector":    比較演算子(">",">=","<","<=","==","!=") ,
-	"arg":         比較する値 (数値/文字列)
+	"input":     対象ストリーム,
+	"attr":      比較カラム名,
+	"selector":  比較演算子(">",">=","<","<=","==","!=") ,
+	"arg":       比較する値 (数値/文字列)
 }
 </code></pre>
 
@@ -38,9 +38,9 @@
 
 <pre><code class="json">
 "rename": {
-	"input":       対象ストリーム,
-	"from":        対象カラム名,
-	"to":          変更後カラム名
+	"input":   対象ストリーム,
+	"from":    対象カラム名,
+	"to":      変更後カラム名
 }
 </code></pre>
 
@@ -48,8 +48,7 @@
 
 <pre><code class="json">
 "union": {
-	"input1":       対象ストリーム1,
-	"input2":       対象ストリーム2
+	"inputs": [ 対象ストリーム1, 対象ストリーム2, 対象ストリーム3 ... ]
 }
 </code></pre>
 
@@ -57,11 +56,9 @@
 
 <pre><code class="json">
 "join": {
-	"input1":       対象ストリーム1,
-	"input2":       対象ストリーム2,
-	"attr1":        対象ストリーム1の結合カラム名,
-	"attr2":        対象ストリーム2の結合カラム名,
-	"selector":     比較演算子(">",">=","<","<=","==","!=") 
+	"inputs": [ 対象ストリーム1, 対象ストリーム2 ],
+	"attrs":  [ 対象ストリーム1の結合カラム名, 対象ストリーム2の結合カラム名 ],
+	"selector":  比較演算子(">",">=","<","<=","==","!=") 
 }
 </code></pre>
 
@@ -69,8 +66,7 @@
 
 <pre><code class="json">
 "crossjoin": {
-	"input1":       対象ストリーム1,
-	"input1":       対象ストリーム2
+	"inputs": [ 対象ストリーム1, 対象ストリーム2 ]
 }
 </code></pre>
 
@@ -78,7 +74,7 @@
 
 <pre><code class="json">
 "relation":{
-	"name":       csv名(メモリ上のパス名)
+	"name":  csv名(メモリ上のパス名)
 }
 </code></pre>
 

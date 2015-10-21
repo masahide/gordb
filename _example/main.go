@@ -19,14 +19,16 @@ func main() {
 	}
 	const jsonStream = `{ 
 		"union": {
-			"input1": {"selection": {
+			"inputs": [
+			{"selection": {
 				"input": { "relation": { "name": "dir1/staff2" } },
 				"attr": "age",  "selector": ">=", "arg": 31
 			}},
-			"input2": {"selection": {
+			{"selection": {
 				"input": { "relation": { "name": "dir1/staff2" } },
 				"attr": "name", "selector": "==", "arg": "山田"
 			}}
+			]
 		}
 	}`
 	m := core.Stream{}
