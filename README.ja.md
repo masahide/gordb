@@ -49,7 +49,7 @@
 <pre><code class="json">
 "union": {
 	"input1":       対象ストリーム1,
-	"input1":       対象ストリーム2
+	"input2":       対象ストリーム2
 }
 </code></pre>
 
@@ -58,7 +58,7 @@
 <pre><code class="json">
 "join": {
 	"input1":       対象ストリーム1,
-	"input1":       対象ストリーム2,
+	"input2":       対象ストリーム2,
 	"attr1":        対象ストリーム1の結合カラム名,
 	"attr2":        対象ストリーム2の結合カラム名,
 	"selector":     比較演算子(">",">=","<","<=","==","!=") 
