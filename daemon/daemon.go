@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"log"
+	"net"
 	"net/http"
 	"path"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/masahide/gordb/core"
 	"github.com/masahide/gordb/input/csv"
 	"golang.org/x/net/context"
+	"golang.org/x/net/netutil"
 )
 
 type Request struct {
@@ -73,8 +75,13 @@ func (d *Daemon) Serve(ctx context.Context) error {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+	listener, err := net.Listen("tcp", d.Listen)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	log.Printf("listen: %s", d.Listen)
-	err = s.ListenAndServe()
+	//err = s.ListenAndServe()
+	err = s.Serve(netutil.LimitListener(listener, d.ListenLimit))
 	if err != nil {
 		log.Printf("ListenAndServe err:%s", err)
 	}

@@ -14,6 +14,8 @@ type Config struct {
 	WorkerLimit   int
 	WorkerDefault int
 	LoadDir       string
+	ListenLimit   int
+	LogLevel      int
 }
 
 func LoadConfig(filename string) (Config, error) {
