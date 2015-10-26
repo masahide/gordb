@@ -57,7 +57,9 @@ func (d *Daemon) JsonHandler(w http.ResponseWriter, r *http.Request) {
 	elapsendQuery := time.Now().Sub(startTime) - elapsendJsonDecode
 	json.NewEncoder(w).Encode(relations)
 	elapsedAll := time.Now().Sub(startTime)
-	log.Printf("elapsed:%s, json decode:%s, query:%s, json encode:%s", elapsedAll, elapsendJsonDecode, elapsendQuery, elapsedAll-elapsendQuery-elapsendJsonDecode)
+	if d.LogLevel > 0 {
+		log.Printf("elapsed:%s, json decode:%s, query:%s, json encode:%s", elapsedAll, elapsendJsonDecode, elapsendQuery, elapsedAll-elapsendQuery-elapsendJsonDecode)
+	}
 	return
 
 }
