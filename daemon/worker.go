@@ -28,6 +28,19 @@ type Query struct {
 
 type Querys []Query
 
+type Worker struct {
+	*Daemon
+	DataBuf [][]core.Value
+}
+
+func NewWorker(d *Daemon) *Worker {
+	return &Worker{
+		Daemon:  d,
+		DataBuf: make([][]core.Value, 0, core.RowCapacity),
+	}
+
+}
+
 func (d *Daemon) JsonHandler(w http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
 	name := r.PostForm.Get("name")
@@ -48,7 +61,7 @@ func (d *Daemon) JsonHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	elapsendJsonDecode := time.Now().Sub(startTime)
-	relations, err := d.QueryStreams(name, querys)
+	relations, endCh, err := d.QueryStreams(name, querys)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(err.Error)
@@ -56,6 +69,7 @@ func (d *Daemon) JsonHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	elapsendQuery := time.Now().Sub(startTime) - elapsendJsonDecode
 	json.NewEncoder(w).Encode(relations)
+	close(endCh)
 	elapsedAll := time.Now().Sub(startTime)
 	if d.LogLevel > 0 {
 		log.Printf("elapsed:%s, json decode:%s, query:%s, json encode:%s", elapsedAll, elapsendJsonDecode, elapsendQuery, elapsedAll-elapsendQuery-elapsendJsonDecode)
@@ -85,7 +99,7 @@ func (d *Daemon) PhpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	elapsendJsonDecode := time.Now().Sub(startTime)
-	relations, err := d.QueryStreams(name, querys)
+	relations, endCh, err := d.QueryStreams(name, querys)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		s, e := phpserialize.Encode(err.Error())
@@ -105,27 +119,29 @@ func (d *Daemon) PhpHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, s)
 	}
 	fmt.Fprint(w, phpArray)
+	close(endCh)
 	elapsedAll := time.Now().Sub(startTime)
 	log.Printf("elapsed:%s, json decode:%s, query:%s, php encode:%s", elapsedAll, elapsendJsonDecode, elapsendQuery, elapsedAll-elapsendQuery-elapsendJsonDecode)
 	return
 
 }
 
-func (d *Daemon) QueryStreams(name string, querys Querys) (res []*core.Relation, err error) {
+func (d *Daemon) QueryStreams(name string, querys Querys) (res []*core.Relation, endCh chan bool, err error) {
 	result := make([]*core.Relation, len(querys))
 	resChs := make([]chan Response, len(querys))
+	endCh = make(chan bool)
 	for i, query := range querys {
 		resChs[i] = make(chan Response, 1)
-		d.Queue <- Request{Query: query.Stream, Name: name, ResCh: resChs[i]}
+		d.Queue <- Request{Query: query.Stream, Name: name, ResCh: resChs[i], EndCh: endCh}
 	}
 	for i := 0; i < len(querys); i++ {
 		res := <-resChs[i]
 		if res.Err != nil {
-			return nil, res.Err
+			return nil, nil, res.Err
 		}
 		result[i] = res.Result
 	}
-	return result, nil
+	return result, endCh, nil
 
 }
 
@@ -139,16 +155,25 @@ func (d *Daemon) RelationsToPhpArray(rs []*core.Relation, querys Querys) (string
 
 func (d *Daemon) Worker(ctx context.Context, ManageCh chan ManageRequest) {
 	node := core.NewNode("root")
+	worker := NewWorker(d)
 	for {
 		select {
 		case req := <-d.Queue:
-			res := d.work(req, node)
-			req.ResCh <- res
+			worker.DataBuf = worker.DataBuf[0:0]
+			res := worker.work(req, node)
+			select {
+			case req.ResCh <- res:
+			case <-ctx.Done():
+			}
 			if res.Err != nil {
 				log.Printf("work err: %s", res.Err)
 			}
+			select {
+			case <-req.EndCh:
+			case <-ctx.Done():
+			}
 		case req := <-ManageCh:
-			res := d.manageWork(req, node)
+			res := worker.manageWork(req, node)
 			req.ResCh <- res
 			if res.Err != nil {
 				log.Printf("manageWork err: %s", res.Err)
@@ -160,13 +185,13 @@ func (d *Daemon) Worker(ctx context.Context, ManageCh chan ManageRequest) {
 	}
 }
 
-func (d *Daemon) work(req Request, node *core.Node) Response {
+func (d *Worker) work(req Request, node *core.Node) Response {
 	res := Response{}
 	n, ok := node.Nodes[req.Name]
 	if !ok {
 		res.Err = fmt.Errorf("request.Name not found: %s", req.Name)
 		return res
 	}
-	res.Result, res.Err = core.StreamToRelation(req.Query, n)
+	res.Result, res.Err = core.GetRelation(req.Query, d.DataBuf, n)
 	return res
 }

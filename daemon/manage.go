@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"path"
+	"runtime/pprof"
 	"sort"
 	"strings"
 
@@ -22,6 +24,8 @@ const (
 	DelNode
 	GetNodeList
 	GetNodes
+
+	PPROF_FILE = "/tmp/gordb.pprof"
 )
 
 type ManageRequest struct {
@@ -61,7 +65,8 @@ func (d *Daemon) ManageHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	case "PUT": // move
 		name := strings.TrimRight(path.Base(r.URL.Path), "/")
-		if name == "move" {
+		switch name {
+		case "move":
 			from := r.PostForm.Get("from")
 			to := r.PostForm.Get("to")
 			err := d.BroadcastManageReq(ManageRequest{Cmd: MoveNode, From: from, To: to})
@@ -69,6 +74,17 @@ func (d *Daemon) ManageHandler(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusBadRequest)
 				fmt.Fprintln(w, err)
 			}
+		case "start_pprof":
+			f, err := os.Create(PPROF_FILE)
+			if err != nil {
+				log.Print(err)
+				break
+			}
+			pprof.StartCPUProfile(f)
+			log.Printf("StartCPUProfile(%s)", PPROF_FILE)
+		case "end_pprof":
+			pprof.StopCPUProfile()
+			log.Print("StopCPUProfile")
 		}
 	case "DELETE": //delete
 		name := strings.TrimRight(path.Base(r.URL.Path), "/")
