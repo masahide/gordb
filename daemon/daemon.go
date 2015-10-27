@@ -17,6 +17,7 @@ type Request struct {
 	Query core.Stream
 	Name  string
 	ResCh chan Response
+	EndCh chan bool
 }
 
 type Response struct {
