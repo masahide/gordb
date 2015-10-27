@@ -28,6 +28,19 @@ type Query struct {
 
 type Querys []Query
 
+type Worker struct {
+	*Daemon
+	DataBuf [][]core.Value
+}
+
+func NewWorker(d *Daemon) *Worker {
+	return &Worker{
+		Daemon:  d,
+		DataBuf: make([][]core.Value, 0, core.RowCapacity),
+	}
+
+}
+
 func (d *Daemon) JsonHandler(w http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
 	name := r.PostForm.Get("name")
@@ -139,16 +152,18 @@ func (d *Daemon) RelationsToPhpArray(rs []*core.Relation, querys Querys) (string
 
 func (d *Daemon) Worker(ctx context.Context, ManageCh chan ManageRequest) {
 	node := core.NewNode("root")
+	worker := NewWorker(d)
 	for {
 		select {
 		case req := <-d.Queue:
-			res := d.work(req, node)
+			worker.DataBuf = worker.DataBuf[0:0]
+			res := worker.work(req, node)
 			req.ResCh <- res
 			if res.Err != nil {
 				log.Printf("work err: %s", res.Err)
 			}
 		case req := <-ManageCh:
-			res := d.manageWork(req, node)
+			res := worker.manageWork(req, node)
 			req.ResCh <- res
 			if res.Err != nil {
 				log.Printf("manageWork err: %s", res.Err)
@@ -160,13 +175,13 @@ func (d *Daemon) Worker(ctx context.Context, ManageCh chan ManageRequest) {
 	}
 }
 
-func (d *Daemon) work(req Request, node *core.Node) Response {
+func (d *Worker) work(req Request, node *core.Node) Response {
 	res := Response{}
 	n, ok := node.Nodes[req.Name]
 	if !ok {
 		res.Err = fmt.Errorf("request.Name not found: %s", req.Name)
 		return res
 	}
-	res.Result, res.Err = core.StreamToRelation(req.Query, n)
+	res.Result, res.Err = core.GetRelation(req.Query, d.DataBuf, n)
 	return res
 }

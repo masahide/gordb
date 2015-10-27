@@ -5,13 +5,17 @@ const TupleCapacity = 100
 const RowCapacity = 5000
 
 func StreamToRelation(s Stream, n *Node) (*Relation, error) {
+	return GetRelation(s, make([][]Value, 0, RowCapacity), n)
+}
+
+func GetRelation(s Stream, buf [][]Value, n *Node) (*Relation, error) {
 	err := s.Init(n)
 	if err != nil {
 		return nil, err
 	}
 	result := &Relation{
 		Attrs: NewSchema(),
-		Data:  make([][]Value, 0, RowCapacity),
+		Data:  buf,
 	}
 	lastTuple := NewTuple()
 	for s.HasNext() {
