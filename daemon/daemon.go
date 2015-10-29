@@ -21,8 +21,8 @@ type Query struct {
 type Querys []Query
 
 type QuerysRequest struct {
+	Querys
 	Name   string
-	Querys Querys
 	ResChs []chan Response
 	EndCh  chan bool
 }
@@ -62,6 +62,7 @@ func NewDaemon(conf Config) *Daemon {
 
 func (d *Daemon) Serve(ctx context.Context) error {
 
+	go d.QueryHandleWorker(ctx)
 	for i := 0; i < d.WorkerLimit; i++ {
 		d.MngQ[i] = make(chan ManageRequest, 1)
 		go d.Worker(ctx, d.MngQ[i])

@@ -125,16 +125,16 @@ func (d *Daemon) QueryHandleWorker(ctx context.Context) {
 		case qs := <-d.QuerysQ:
 			for i := 0; i < len(qs.Querys); i++ {
 				select {
+				case d.WorkCount <- true:
 				case <-ctx.Done():
 					return
-				case d.WorkCount <- true:
 				}
 			}
 			for i := 0; i < len(qs.Querys); i++ {
 				select {
+				case d.Queue <- Request{Name: qs.Name, Query: qs.Querys[i].Stream, ResCh: qs.ResChs[i], EndCh: qs.EndCh}:
 				case <-ctx.Done():
 					return
-				case d.Queue <- Request{Name: qs.Name, Query: qs.Querys[i], ResCh: qs.ResChs[i], EndCh: qs.EndCh}:
 				}
 			}
 		case <-ctx.Done():
@@ -148,10 +148,13 @@ func (d *Daemon) QueryStreams(name string, querys Querys) (res []*core.Relation,
 	result := make([]*core.Relation, len(querys))
 	resChs := make([]chan Response, len(querys))
 	endCh = make(chan bool)
-	for i, query := range querys {
-		resChs[i] = make(chan Response, 1)
-		d.Queue <- Request{Query: query.Stream, Name: name, ResCh: resChs[i], EndCh: endCh}
-	}
+	d.QuerysQ <- QuerysRequest{Querys: querys, Name: name, ResChs: resChs, EndCh: endCh}
+	/*
+		for i, query := range querys {
+			resChs[i] = make(chan Response, 1)
+			d.Queue <- Request{Query: query.Stream, Name: name, ResCh: resChs[i], EndCh: endCh}
+		}
+	*/
 	for i := 0; i < len(querys); i++ {
 		res := <-resChs[i]
 		if res.Err != nil {
