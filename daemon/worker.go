@@ -21,13 +21,6 @@ type Options struct {
 	QueryCache bool   `json:"query_cache,omitempty"`
 }
 
-type Query struct {
-	Options     `json:"options"`
-	core.Stream `json:"stream"`
-}
-
-type Querys []Query
-
 type Worker struct {
 	*Daemon
 	DataBuf [][]core.Value
@@ -126,6 +119,31 @@ func (d *Daemon) PhpHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (d *Daemon) QueryHandleWorker(ctx context.Context) {
+	for {
+		select {
+		case qs := <-d.QuerysQ:
+			for i := 0; i < len(qs.Querys); i++ {
+				select {
+				case <-ctx.Done():
+					return
+				case d.WorkCount <- true:
+				}
+			}
+			for i := 0; i < len(qs.Querys); i++ {
+				select {
+				case <-ctx.Done():
+					return
+				case d.Queue <- Request{Name: qs.Name, Query: qs.Querys[i], ResCh: qs.ResChs[i], EndCh: qs.EndCh}:
+				}
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
+
+}
+
 func (d *Daemon) QueryStreams(name string, querys Querys) (res []*core.Relation, endCh chan bool, err error) {
 	result := make([]*core.Relation, len(querys))
 	resChs := make([]chan Response, len(querys))
@@ -164,6 +182,7 @@ func (d *Daemon) Worker(ctx context.Context, ManageCh chan ManageRequest) {
 			select {
 			case req.ResCh <- res:
 			case <-ctx.Done():
+				return
 			}
 			if res.Err != nil {
 				log.Printf("work err: %s", res.Err)
@@ -171,7 +190,9 @@ func (d *Daemon) Worker(ctx context.Context, ManageCh chan ManageRequest) {
 			select {
 			case <-req.EndCh:
 			case <-ctx.Done():
+				return
 			}
+			<-d.WorkCount
 		case req := <-ManageCh:
 			res := worker.manageWork(req, node)
 			req.ResCh <- res

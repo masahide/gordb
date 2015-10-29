@@ -13,6 +13,20 @@ import (
 	"golang.org/x/net/netutil"
 )
 
+type Query struct {
+	Options     `json:"options"`
+	core.Stream `json:"stream"`
+}
+
+type Querys []Query
+
+type QuerysRequest struct {
+	Name   string
+	Querys Querys
+	ResChs []chan Response
+	EndCh  chan bool
+}
+
 type Request struct {
 	Query core.Stream
 	Name  string
@@ -28,17 +42,21 @@ type Response struct {
 type Daemon struct {
 	Config
 
+	QuerysQ     chan QuerysRequest
 	Queue       chan Request
 	PoolCounter chan bool
 	MaxWorker   chan int
 	MngQ        []chan ManageRequest
+	WorkCount   chan bool
 }
 
 func NewDaemon(conf Config) *Daemon {
 	return &Daemon{
-		Config: conf,
-		Queue:  make(chan Request, conf.WorkerLimit),
-		MngQ:   make([]chan ManageRequest, conf.WorkerLimit),
+		Config:    conf,
+		Queue:     make(chan Request, conf.WorkerLimit),
+		MngQ:      make([]chan ManageRequest, conf.WorkerLimit),
+		QuerysQ:   make(chan QuerysRequest, conf.WorkerLimit),
+		WorkCount: make(chan bool, conf.WorkerLimit),
 	}
 }
 
