@@ -3,7 +3,9 @@
 
 Listen        =  ":3050"
 ManageListen  =  ":9089"
-WorkerLimit   =  1
-WorkerDefault =  1
+WorkerLimit   =  2 
+WorkerDefault =  2 
 LoadDir       =  "test"
+ListenLimit   = 10
+LogLevel      = 2
 

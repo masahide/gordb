@@ -148,6 +148,9 @@ func (d *Daemon) QueryStreams(name string, querys Querys) (res []*core.Relation,
 	result := make([]*core.Relation, len(querys))
 	resChs := make([]chan Response, len(querys))
 	endCh = make(chan bool)
+	for i := 0; i < len(querys); i++ {
+		resChs[i] = make(chan Response, 1)
+	}
 	d.QuerysQ <- QuerysRequest{Querys: querys, Name: name, ResChs: resChs, EndCh: endCh}
 	/*
 		for i, query := range querys {
